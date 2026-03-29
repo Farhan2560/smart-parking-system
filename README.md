@@ -19,6 +19,13 @@ Urban areas face a growing challenge of inefficient parking management, leading 
 ```
 smart-parking-system/
 ├── README.md                      # This file — project overview & problem statement
+├── frontend/                      # React + Vite frontend application
+│   ├── src/
+│   │   ├── components/            # Shared UI components (Navbar)
+│   │   ├── data/mockData.js       # Static mock data layer
+│   │   └── pages/                 # Dashboard, Zones, Slots, Sessions, Payments
+│   ├── package.json
+│   └── README.md                  # Frontend setup & usage instructions
 ├── docs/
 │   ├── er_diagram.md              # Conceptual ER design (entities, attributes, relationships)
 │   └── normalization_report.md    # 3NF normalization analysis for each relation
@@ -47,6 +54,18 @@ smart-parking-system/
 ---
 
 ## Quick Start
+
+### Frontend (React + Vite)
+
+> Requires [Node.js](https://nodejs.org/) v18+
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173** in your browser. See [`frontend/README.md`](frontend/README.md) for full details.
 
 ### SQL (PostgreSQL / MySQL)
 
