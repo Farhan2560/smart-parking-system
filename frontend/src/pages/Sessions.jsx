@@ -50,6 +50,8 @@ export default function Sessions() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...formData,
+        slot_id: assignedSlot.slot_id,
+        zone_id: selectedZone.zone_id,
         slot_number: assignedSlot.slot_number,
         entry_time: new Date().toISOString(),
         status: "Active"
@@ -59,12 +61,12 @@ export default function Sessions() {
     refreshData();
   };
 
-  const handleEndSession = async (session_id, entry_time) => {
+  const handleEndSession = async (sessionId, entry_time) => {
     const exitTime = new Date();
     const entryDate = new Date(entry_time);
     const durationObj = (exitTime - entryDate) / (1000 * 60 * 60);
     
-    await fetch(`/api/sessions/${session_id}`, {
+    await fetch(`/api/sessions/${sessionId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -78,7 +80,7 @@ export default function Sessions() {
   };
 
   const filteredSessions = [...sessions]
-    .sort((a, b) => b.session_id - a.session_id)
+    .sort((a, b) => String(b._id).localeCompare(String(a._id)))
     .filter(s => filterStatus === "All" || s.status === filterStatus);
 
   return (
@@ -175,8 +177,8 @@ export default function Sessions() {
           </thead>
           <tbody>
             {filteredSessions.map((s) => (
-              <tr key={s.session_id}>
-                <td>{s.session_id}</td>
+              <tr key={s._id}>
+                <td title={s._id}>{String(s._id).slice(-6)}</td>
                 <td>{s.driver_name}</td>
                 <td>{s.vehicle_plate}</td>
                 <td>{s.zone_name}</td>
@@ -193,7 +195,7 @@ export default function Sessions() {
                 <td>
                   {s.status === "Active" ? (
                     <button 
-                      onClick={() => handleEndSession(s.session_id, s.entry_time)}
+                      onClick={() => handleEndSession(s._id, s.entry_time)}
                       style={{ padding: "4px 8px", background: "#e57373", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
                     >
                       End
