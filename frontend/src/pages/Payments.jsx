@@ -59,9 +59,9 @@ export default function Payments() {
           </thead>
           <tbody>
             {payments.map((p) => (
-              <tr key={p.payment_id}>
-                <td>{p.payment_id}</td>
-                <td>#{p.session_id}</td>
+              <tr key={p._id}>
+                <td title={p._id}>{String(p._id).slice(-6)}</td>
+                <td>{p.session_ref ? `#${String(p.session_ref).slice(-6)}` : '—'}</td>
                 <td>{p.driver_name}</td>
                 <td>{p.vehicle_plate}</td>
                 <td>{p.amount != null ? `$${p.amount.toFixed(2)}` : "—"}</td>
