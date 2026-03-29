@@ -19,10 +19,14 @@ Urban areas face a growing challenge of inefficient parking management, leading 
 ```
 smart-parking-system/
 ├── README.md                      # This file — project overview & problem statement
+├── backend/                       # Node.js + Express + Mongoose API
+│   ├── server.js                  # REST API routes and DB connection
+│   ├── models.js                  # Mongoose schemas
+│   └── package.json
 ├── frontend/                      # React + Vite frontend application
 │   ├── src/
 │   │   ├── components/            # Shared UI components (Navbar)
-│   │   ├── data/mockData.js       # Static mock data layer
+│   │   ├── data/useData.js        # API data hook (fetch + refresh)
 │   │   └── pages/                 # Dashboard, Zones, Slots, Sessions, Payments
 │   ├── package.json
 │   └── README.md                  # Frontend setup & usage instructions
@@ -55,6 +59,26 @@ smart-parking-system/
 
 ## Quick Start
 
+### Backend (Node.js + Express + MongoDB)
+
+> Requires [Node.js](https://nodejs.org/) v18+
+
+Create a backend env file at `backend/.env`:
+
+```
+MONGODB_URI=your_mongodb_atlas_connection_string
+```
+
+Then start the API server:
+
+```bash
+cd backend
+npm install
+npm start
+```
+
+The API runs on **http://localhost:5000**.
+
 ### Frontend (React + Vite)
 
 > Requires [Node.js](https://nodejs.org/) v18+
@@ -86,6 +110,13 @@ psql -U postgres -d usps_db -f sql/queries.sql
 # Open MongoDB shell and run CRUD examples
 mongosh usps_db --file mongodb/crud_examples.js
 ```
+
+---
+
+## Notes
+
+- If you are using MongoDB Atlas, ensure your current IP is added to the Atlas Network Access allowlist.
+- The frontend proxies `/api/*` to `http://localhost:5000` in development.
 
 ---
 

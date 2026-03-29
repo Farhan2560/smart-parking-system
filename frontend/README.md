@@ -7,10 +7,10 @@ A React + Vite single-page application providing a UI for the **Urban Smart Park
 - **Dashboard** — live summary stats and zone availability bars
 - **Zones** — card view of all parking zones with slot counts and hourly rates
 - **Slots** — filterable table of individual parking slots with status badges
-- **Sessions** — full session log (entry/exit times, duration, amount due)
+- **Sessions** — full session log with start/end actions
 - **Payments** — payment records with totals summary
 - Client-side routing via **React Router**
-- Static mock data layer (`src/data/mockData.js`) ready to swap for a real API
+- Live data via `src/data/useData.js` with refresh support
 
 ## Prerequisites
 
@@ -47,7 +47,7 @@ frontend/
 │   │   ├── Navbar.jsx       # Sticky top navigation bar
 │   │   └── Navbar.css
 │   ├── data/
-│   │   └── mockData.js      # Static mock data (zones, slots, sessions, payments)
+│   │   └── useData.js       # API data hook (fetch + refresh)
 │   ├── pages/
 │   │   ├── Dashboard.jsx    # Overview stats + zone bars
 │   │   ├── Zones.jsx        # Zone cards
@@ -64,4 +64,4 @@ frontend/
 
 ## Connecting to a Real Backend
 
-Replace the static exports in `src/data/mockData.js` with `fetch` / `axios` calls to your REST or GraphQL API. No other changes are needed — components already reference the same data shapes.
+The app uses a built-in hook (`useData`) that calls `/api/*` endpoints. In development, Vite proxies `/api` to `http://localhost:5000` (see `vite.config.js`).
