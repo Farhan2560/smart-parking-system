@@ -1,0 +1,21 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #0d1b2a;
+  color: #cfd8dc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4 {
+  line-height: 1.3;
+}
+
+a {
+  color: #4fc3f7;
+}

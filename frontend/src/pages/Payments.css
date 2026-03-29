@@ -1,0 +1,30 @@
+.payments-summary {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.pay-stat {
+  background: #1e2d3d;
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 120px;
+}
+
+.pay-stat-label {
+  font-size: 0.75rem;
+  color: #78909c;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.3rem;
+}
+
+.pay-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e0f7fa;
+}

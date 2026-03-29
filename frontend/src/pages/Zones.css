@@ -1,0 +1,54 @@
+.zones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.zone-card {
+  background: #1e2d3d;
+  border-radius: 10px;
+  padding: 1.4rem;
+}
+
+.zone-card-header {
+  border-left: 4px solid #4fc3f7;
+  padding-left: 0.75rem;
+  margin-bottom: 1.1rem;
+}
+
+.zone-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e0f7fa;
+  margin: 0 0 0.2rem;
+}
+
+.zone-location {
+  font-size: 0.82rem;
+  color: #78909c;
+}
+
+.zone-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.zone-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.zone-stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #e0f7fa;
+}
+
+.zone-stat-label {
+  font-size: 0.72rem;
+  color: #78909c;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
