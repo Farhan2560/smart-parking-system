@@ -48,7 +48,7 @@ export default function Dashboard() {
           <h2 className="panel-title">Zone Availability</h2>
           {zones.map((z) => {
             const zoneOccupied = sessions.filter(
-              (s) => s.status === "Active" && s.zone_name === z.zone_name
+              (s) => s.status === "Active" && s.zone_id === z.zone_id
             ).length;
             const zoneAvailable = Math.max(z.total_slots - zoneOccupied, 0);
             const pct = z.total_slots > 0
@@ -85,8 +85,8 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {[...sessions].sort((a, b) => b.session_id - a.session_id).slice(0, 4).map((s) => (
-                <tr key={s.session_id}>
+              {[...sessions].sort((a, b) => String(b._id).localeCompare(String(a._id))).slice(0, 4).map((s) => (
+                <tr key={s._id}>
                   <td>{s.driver_name}</td>
                   <td>{s.vehicle_plate}</td>
                   <td>

@@ -61,9 +61,9 @@ export default function Payments() {
             {payments.map((p) => (
               <tr key={p._id}>
                 <td title={p._id}>{String(p._id).slice(-6)}</td>
-                <td>{p.session_ref ? `#${String(p.session_ref).slice(-6)}` : '—'}</td>
-                <td>{p.driver_name}</td>
-                <td>{p.vehicle_plate}</td>
+                <td>{p.session_ref ? `#${String(p.session_ref._id).slice(-6)}` : '—'}</td>
+                <td>{p.session_ref?.driver_name || '—'}</td>
+                <td>{p.session_ref?.vehicle_plate || '—'}</td>
                 <td>{p.amount != null ? `$${p.amount.toFixed(2)}` : "—"}</td>
                 <td>{p.method || "—"}</td>
                 <td>{formatDateTime(p.payment_time)}</td>

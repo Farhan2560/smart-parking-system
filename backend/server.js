@@ -101,12 +101,12 @@ if (process.env.NODE_ENV === 'development') {
 
       // Insert sessions and capture the inserted _ids for payment references
       const sessionDocs = await Session.insertMany([
-        { slot_number: "DO-001", zone_name: "Downtown Central", vehicle_plate: "ABC-1234", driver_name: "Alice Johnson", entry_time: "2026-03-29T08:00:00", exit_time: "2026-03-29T10:30:00", duration_hours: 2.5, amount_due: 8.75, status: "Completed" },
-        { slot_number: "DO-002", zone_name: "Downtown Central", vehicle_plate: "XYZ-5678", driver_name: "Bob Smith", entry_time: "2026-03-29T09:15:00", exit_time: null, duration_hours: null, amount_due: null, status: "Active" }
+        { slot_id: 1, zone_id: 1, slot_number: "DO-001", zone_name: "Downtown Central", vehicle_plate: "ABC-1234", driver_name: "Alice Johnson", entry_time: new Date("2026-03-29T08:00:00"), exit_time: new Date("2026-03-29T10:30:00"), duration_hours: 2.5, amount_due: 8.75, status: "Completed" },
+        { slot_id: 2, zone_id: 1, slot_number: "DO-002", zone_name: "Downtown Central", vehicle_plate: "XYZ-5678", driver_name: "Bob Smith", entry_time: new Date("2026-03-29T09:15:00"), exit_time: null, duration_hours: null, amount_due: null, status: "Active" }
       ]);
 
       const payments = [
-        { session_ref: sessionDocs[0]._id, driver_name: "Alice Johnson", vehicle_plate: "ABC-1234", amount: 8.75, method: "Credit Card", payment_time: "2026-03-29T10:32:00", status: "Paid" }
+        { session_ref: sessionDocs[0]._id, amount: 8.75, method: "Credit Card", payment_time: new Date("2026-03-29T10:32:00"), status: "Paid" }
       ];
 
       await Zone.insertMany(zones);
@@ -246,27 +246,27 @@ app.post('/api/sessions', writeLimiter, async (req, res) => {
     // Fix #2: Destructure only the expected fields.
     // Fix #8: No manual session_id — MongoDB _id (ObjectId) is unique by design
     //         and eliminates the race condition from manual auto-increment.
-    const { slot_number, zone_name, vehicle_plate, driver_name, entry_time, status } = req.body;
-    const obj = new Session({ slot_number, zone_name, vehicle_plate, driver_name, entry_time, status });
+    // slot_id and zone_id are FK references; slot_number and zone_name are denormalized display fields.
+    const { slot_id, zone_id, slot_number, zone_name, vehicle_plate, driver_name, entry_time, status } = req.body;
+    const obj = new Session({ slot_id, zone_id, slot_number, zone_name, vehicle_plate, driver_name, entry_time, status });
     await obj.save();
 
-    // Mark slot as occupied
+    // Mark slot as occupied using the integer FK — immune to slot_number renames
     await Slot.findOneAndUpdate(
-      { slot_number: obj.slot_number },
+      { slot_id: obj.slot_id },
       { status: "Occupied" }
     );
 
-    // Decrease zone availability
+    // Decrease zone availability using the integer FK — immune to zone_name renames
     await Zone.findOneAndUpdate(
-      { zone_name: obj.zone_name },
+      { zone_id: obj.zone_id },
       { $inc: { available_slots: -1 } }
     );
 
-    // Create a pending payment linked by session ObjectId
+    // Create a pending payment linked by session ObjectId.
+    // driver_name and vehicle_plate are NOT stored in Payment (3NF) — join from Session when needed.
     await Payment.create({
       session_ref: obj._id,
-      driver_name: obj.driver_name,
-      vehicle_plate: obj.vehicle_plate,
       status: "Pending"
     });
 
@@ -292,15 +292,15 @@ app.put('/api/sessions/:id', writeLimiter, async (req, res) => {
     }
 
     if (updatedSession.status === "Completed") {
-      // Mark slot as available
+      // Mark slot as available using the integer FK — immune to slot_number renames
       await Slot.findOneAndUpdate(
-        { slot_number: updatedSession.slot_number },
+        { slot_id: updatedSession.slot_id },
         { status: "Available" }
       );
 
-      // Increase zone availability
+      // Increase zone availability using the integer FK — immune to zone_name renames
       await Zone.findOneAndUpdate(
-        { zone_name: updatedSession.zone_name },
+        { zone_id: updatedSession.zone_id },
         { $inc: { available_slots: 1 } }
       );
 
@@ -326,7 +326,9 @@ app.put('/api/sessions/:id', writeLimiter, async (req, res) => {
 // --- PAYMENTS ---
 app.get('/api/payments', async (req, res) => {
   try {
-    const data = await Payment.find();
+    // Populate session_ref so the frontend can display driver/plate from the linked Session.
+    // This avoids duplicating those fields in the Payment document (3NF).
+    const data = await Payment.find().populate('session_ref', 'driver_name vehicle_plate');
     res.json(data);
   } catch (err) {
     console.error('GET /api/payments error:', err);
@@ -338,8 +340,9 @@ app.post('/api/payments', writeLimiter, async (req, res) => {
   try {
     // Fix #2: Destructure only the expected fields.
     // Fix #8: payment_id removed — MongoDB _id (ObjectId) is used as identifier.
-    const { session_ref, driver_name, vehicle_plate, amount, method, payment_time, status } = req.body;
-    const obj = new Payment({ session_ref, driver_name, vehicle_plate, amount, method, payment_time, status });
+    // driver_name and vehicle_plate are not stored in Payment (3NF) — join from Session when needed.
+    const { session_ref, amount, method, payment_time, status } = req.body;
+    const obj = new Payment({ session_ref, amount, method, payment_time, status });
     await obj.save();
     res.status(201).json(obj);
   } catch (err) {

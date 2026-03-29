@@ -12,35 +12,42 @@ const Zone = mongoose.model('Zone', ZoneSchema);
 
 const SlotSchema = new mongoose.Schema({
   slot_id: { type: Number, required: true, unique: true },
-  zone_id: { type: Number, required: true },
+  // Foreign key referencing Zone — links each slot to its zone by integer primary key
+  zone_id: { type: Number, required: true, ref: 'Zone' },
   slot_number: { type: String, required: true, unique: true },
   slot_type: { type: String, enum: ['Standard', 'Handicapped', 'EV Charging'], default: 'Standard' },
   status: { type: String, enum: ['Available', 'Occupied', 'Maintenance'], default: 'Available' }
 });
 const Slot = mongoose.model('Slot', SlotSchema);
 
-// session_id removed — MongoDB _id (ObjectId) is used instead to avoid race conditions
+// MongoDB _id (ObjectId) is the primary key — session_id removed to avoid race conditions.
 const SessionSchema = new mongoose.Schema({
-  slot_number: { type: String, required: true },
-  zone_name: { type: String, required: true },
+  // Foreign keys referencing infrastructure by integer IDs — robust against name renames
+  slot_id: { type: Number, required: true, ref: 'Slot' },
+  zone_id: { type: Number, required: true, ref: 'Zone' },
+  // Convenience display fields — denormalized for read performance
+  slot_number: String,
+  zone_name: String,
   vehicle_plate: { type: String, required: true },
   driver_name: { type: String, required: true },
-  entry_time: { type: String, required: true },
-  exit_time: String,
+  // Date type enables accurate duration calculation and range queries
+  entry_time: { type: Date, required: true },
+  exit_time: Date,
   duration_hours: Number,
   amount_due: Number,
   status: { type: String, enum: ['Active', 'Completed'], default: 'Active' }
 });
 const Session = mongoose.model('Session', SessionSchema);
 
-// payment_id removed — MongoDB _id (ObjectId) is used instead to avoid race conditions
+// MongoDB _id (ObjectId) is the primary key — payment_id removed to avoid race conditions.
+// driver_name and vehicle_plate removed (3NF) — retrieve from the linked Session when needed.
 const PaymentSchema = new mongoose.Schema({
-  session_ref: { type: mongoose.Schema.Types.ObjectId, ref: 'Session' },
-  driver_name: String,
-  vehicle_plate: String,
+  // Foreign key referencing Session — required so every payment is traceable to a session
+  session_ref: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Session' },
   amount: Number,
   method: String,
-  payment_time: String,
+  // Date type enables accurate timestamp queries and formatting
+  payment_time: Date,
   status: { type: String, enum: ['Pending', 'Paid'], default: 'Pending' }
 });
 const Payment = mongoose.model('Payment', PaymentSchema);

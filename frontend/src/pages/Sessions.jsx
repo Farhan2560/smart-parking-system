@@ -50,6 +50,8 @@ export default function Sessions() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...formData,
+        slot_id: assignedSlot.slot_id,
+        zone_id: selectedZone.zone_id,
         slot_number: assignedSlot.slot_number,
         entry_time: new Date().toISOString(),
         status: "Active"
