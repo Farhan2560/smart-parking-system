@@ -1,14 +1,20 @@
-import { payments } from "../data/mockData";
+import { useData } from "../data/useData";
 import "./Dashboard.css";
 import "./Slots.css";
 import "./Payments.css";
 
 function formatDateTime(dt) {
-  if (!dt) return "—";
+  if (!dt) return "â€”";
   return new Date(dt).toLocaleString();
 }
 
 export default function Payments() {
+  const { payments, loading, error } = useData(['payments']);
+
+  if (loading) return <div>Loading data...</div>;
+  if (error) return <div>Error loading database: {error}. Please ensure your MongoDB Atlas IP is whitelisted and your backend is connected.</div>;
+  if (!payments) return <div>No data available.</div>;
+
   const totalPaid = payments
     .filter((p) => p.status === "Paid")
     .reduce((sum, p) => sum + (p.amount || 0), 0);

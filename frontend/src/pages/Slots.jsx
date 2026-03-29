@@ -1,11 +1,16 @@
 import { useState } from "react";
-import { slots, zones } from "../data/mockData";
+import { useData } from "../data/useData";
 import "./Dashboard.css";
 import "./Slots.css";
 
 export default function Slots() {
+  const { slots, zones, loading, error } = useData(['slots', 'zones']);
   const [filterZone, setFilterZone] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
+
+  if (loading) return <div>Loading data...</div>;
+  if (error) return <div>Error loading database: {error}. Please ensure your MongoDB Atlas IP is whitelisted and your backend is connected.</div>;
+  if (!slots || !zones) return <div>No data available.</div>;
 
   const filtered = slots.filter((s) => {
     const zone = zones.find((z) => z.zone_id === s.zone_id);

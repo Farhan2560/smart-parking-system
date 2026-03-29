@@ -1,11 +1,18 @@
-import { zones, sessions, payments } from "../data/mockData";
+import { useData } from "../data/useData";
 import "./Dashboard.css";
 
 export default function Dashboard() {
+  const { zones, sessions, payments, loading, error } = useData(['zones', 'sessions', 'payments']);
+
+  if (loading) return <div>Loading data...</div>;
+  if (error) return <div>Error loading database: {error}. Please ensure your MongoDB Atlas IP is whitelisted and your backend is connected.</div>;
+  if (!zones || !sessions || !payments) return <div>No data available.</div>;
+
   const totalSlots = zones.reduce((sum, z) => sum + z.total_slots, 0);
-  const availableSlots = zones.reduce((sum, z) => sum + z.available_slots, 0);
-  const occupiedSlots = totalSlots - availableSlots;
   const activeSessions = sessions.filter((s) => s.status === "Active").length;
+  // UI-only: align occupied slots with active sessions.
+  const occupiedSlots = activeSessions;
+  const availableSlots = Math.max(totalSlots - occupiedSlots, 0);
   const totalRevenue = payments
     .filter((p) => p.status === "Paid")
     .reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -40,7 +47,13 @@ export default function Dashboard() {
         <div className="panel">
           <h2 className="panel-title">Zone Availability</h2>
           {zones.map((z) => {
-            const pct = Math.round((z.available_slots / z.total_slots) * 100);
+            const zoneOccupied = sessions.filter(
+              (s) => s.status === "Active" && s.zone_name === z.zone_name
+            ).length;
+            const zoneAvailable = Math.max(z.total_slots - zoneOccupied, 0);
+            const pct = z.total_slots > 0
+              ? Math.round((zoneAvailable / z.total_slots) * 100)
+              : 0;
             return (
               <div key={z.zone_id} className="zone-bar-row">
                 <div className="zone-bar-label">
@@ -72,7 +85,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {sessions.slice(0, 4).map((s) => (
+              {[...sessions].sort((a, b) => b.session_id - a.session_id).slice(0, 4).map((s) => (
                 <tr key={s.session_id}>
                   <td>{s.driver_name}</td>
                   <td>{s.vehicle_plate}</td>
