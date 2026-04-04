@@ -107,12 +107,16 @@ app.post('/api/auth/register', writeLimiter, async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({ error: 'username and password are required' });
     }
-    const existing = await User.findOne({ username });
+    // Enforce string types to prevent NoSQL operator injection
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'username and password must be strings' });
+    }
+    const existing = await User.findOne({ username: String(username) });
     if (existing) {
       return res.status(409).json({ error: 'Username already taken' });
     }
     const hash = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hash, role: 'customer', full_name: full_name || '' });
+    const user = new User({ username: String(username), password: hash, role: 'customer', full_name: full_name ? String(full_name) : '' });
     await user.save();
     res.status(201).json({ message: 'Account created successfully' });
   } catch (err) {
@@ -128,7 +132,11 @@ app.post('/api/auth/login', writeLimiter, async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({ error: 'username and password are required' });
     }
-    const user = await User.findOne({ username });
+    // Enforce string types to prevent NoSQL operator injection
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'username and password must be strings' });
+    }
+    const user = await User.findOne({ username: String(username) });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
