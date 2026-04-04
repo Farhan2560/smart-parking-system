@@ -22,7 +22,7 @@ export default function Dashboard() {
     { label: "Total Slots", value: totalSlots, icon: "🅿️", color: "#81c784" },
     { label: "Available", value: availableSlots, icon: "✅", color: "#a5d6a7" },
     { label: "Occupied", value: occupiedSlots, icon: "🚗", color: "#ef9a9a" },
-    { label: "Active Sessions", value: activeSessions, icon: "⏱️", color: "#ffcc80" },
+    // { label: "Active Sessions", value: activeSessions, icon: "⏱️", color: "#ffcc80" },
     { label: "Revenue Today", value: `$${totalRevenue.toFixed(2)}`, icon: "💳", color: "#ce93d8" },
   ];
 
