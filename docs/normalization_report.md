@@ -1,4 +1,4 @@
-# Normalization Report — Urban Smart Parking System (USPS)
+# Normalization Report — ParkFlow
 
 ## Overview
 

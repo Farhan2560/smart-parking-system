@@ -152,8 +152,8 @@ app.post('/api/auth/login', writeLimiter, async (req, res) => {
   }
 });
 
-// Fix #1: Only allow seeding in development — prevents public database wipe in production
-if (process.env.NODE_ENV === 'development') {
+// Fix #1: Only allow seeding in development (or locally) — prevents public database wipe in production
+if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
   app.post('/api/seed', writeLimiter, async (req, res) => {
     try {
       // Clear existing
@@ -218,6 +218,17 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
+// Admin: get all registered users
+app.get('/api/users', requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find({}, '-password').sort({ _id: -1 });
+    res.json(users);
+  } catch (err) {
+    console.error('GET /api/users error:', err);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
 // --- ZONES ---
 app.get('/api/zones', async (req, res) => {
   try {
@@ -277,6 +288,36 @@ app.put('/api/zones/:id', writeLimiter, requireAdmin, async (req, res) => {
   }
 });
 
+app.delete('/api/zones/:id', writeLimiter, requireAdmin, async (req, res) => {
+  try {
+    const zoneId = Number(req.params.id);
+
+    const zone = await Zone.findOne({ zone_id: zoneId });
+    if (!zone) {
+      return res.status(404).json({ error: 'Zone not found' });
+    }
+
+    // Prevent deletion if there is an active session
+    // Included fallback to zone_name to support legacy sample data
+    const activeSession = await Session.findOne({
+      $or: [{ zone_id: zoneId }, { zone_name: zone.zone_name }],
+      status: 'Active'
+    });
+    
+    if (activeSession) {
+      return res.status(400).json({ error: 'Cannot delete a zone with active parking sessions' });
+    }
+
+    await Zone.findOneAndDelete({ zone_id: zoneId });
+    // Also delete associated slots
+    await Slot.deleteMany({ zone_id: zoneId });
+    res.json({ message: 'Zone deleted successfully' });
+  } catch (err) {
+    console.error('DELETE /api/zones error:', err);
+    res.status(500).json({ error: err.message || 'Error deleting zone' });
+  }
+});
+
 // --- SLOTS ---
 app.get('/api/slots', async (req, res) => {
   try {
@@ -312,6 +353,34 @@ app.put('/api/slots/:id', writeLimiter, requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('PUT /api/slots error:', err);
     res.status(400).json({ error: err.message || 'Invalid slot data provided' });
+  }
+});
+
+app.delete('/api/slots/:id', writeLimiter, requireAdmin, async (req, res) => {
+  try {
+    const slotId = Number(req.params.id);
+
+    const slot = await Slot.findOne({ slot_id: slotId });
+    if (!slot) {
+      return res.status(404).json({ error: 'Slot not found' });
+    }
+
+    // Prevent deletion if there is an active session
+    // Included fallback to slot_number to support legacy sample data
+    const activeSession = await Session.findOne({
+      $or: [{ slot_id: slotId }, { slot_number: slot.slot_number }],
+      status: 'Active'
+    });
+    
+    if (activeSession) {
+      return res.status(400).json({ error: 'Cannot delete a slot with an active parking session' });
+    }
+
+    await Slot.findOneAndDelete({ slot_id: slotId });
+    res.json({ message: 'Slot deleted successfully' });
+  } catch (err) {
+    console.error('DELETE /api/slots error:', err);
+    res.status(500).json({ error: err.message || 'Error deleting slot' });
   }
 });
 
@@ -359,6 +428,17 @@ app.post('/api/sessions', writeLimiter, requireAuth, async (req, res) => {
     // slot_id and zone_id are FK references; slot_number and zone_name are denormalized display fields.
     const { slot_id, zone_id, slot_number, zone_name, vehicle_plate, driver_name, entry_time, status } = req.body;
     const user_id = req.user.userId;
+
+    // Prevent user from starting multiple sessions for the exact same vehicle plate
+    const existingActiveSession = await Session.findOne({
+      user_id: user_id,
+      vehicle_plate: { $regex: new RegExp('^' + vehicle_plate + '$', 'i') },
+      status: 'Active'
+    });
+    if (existingActiveSession) {
+      return res.status(400).json({ error: `You already have an active session for the vehicle plate "${vehicle_plate}".` });
+    }
+
     const obj = new Session({ slot_id, zone_id, slot_number, zone_name, vehicle_plate, driver_name, entry_time, status, user_id });
     await obj.save();
 

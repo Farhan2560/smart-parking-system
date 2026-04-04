@@ -1,4 +1,5 @@
 import { useData } from "../data/useData";
+import { Map, Grid3x3, CheckCircle2, Car, CreditCard, Activity, Clock } from "lucide-react";
 import "./Dashboard.css";
 
 export default function Dashboard() {
@@ -9,32 +10,31 @@ export default function Dashboard() {
   if (!zones || !sessions || !payments) return <div>No data available.</div>;
 
   const totalSlots = zones.reduce((sum, z) => sum + z.total_slots, 0);
-  const activeSessions = sessions.filter((s) => s.status === "Active").length;
-  // UI-only: align occupied slots with active sessions.
-  const occupiedSlots = activeSessions;
-  const availableSlots = Math.max(totalSlots - occupiedSlots, 0);
+  const availableSlots = zones.reduce((sum, z) => sum + z.available_slots, 0);
+  const occupiedSlots = totalSlots - availableSlots;
   const totalRevenue = payments
     .filter((p) => p.status === "Paid")
     .reduce((sum, p) => sum + (p.amount || 0), 0);
 
   const stats = [
-    { label: "Parking Zones", value: zones.length, icon: "🗺️", color: "#4fc3f7" },
-    { label: "Total Slots", value: totalSlots, icon: "🅿️", color: "#81c784" },
-    { label: "Available", value: availableSlots, icon: "✅", color: "#a5d6a7" },
-    { label: "Occupied", value: occupiedSlots, icon: "🚗", color: "#ef9a9a" },
-    // { label: "Active Sessions", value: activeSessions, icon: "⏱️", color: "#ffcc80" },
-    { label: "Revenue Today", value: `$${totalRevenue.toFixed(2)}`, icon: "💳", color: "#ce93d8" },
+    { label: "Parking Zones", value: zones.length, icon: <Map size={26} />, color: "var(--accent)" },
+    { label: "Total Slots", value: totalSlots, icon: <Grid3x3 size={26} />, color: "var(--primary)" },
+    { label: "Available", value: availableSlots, icon: <CheckCircle2 size={26} />, color: "var(--success)" },
+    { label: "Occupied", value: occupiedSlots, icon: <Car size={26} />, color: "var(--danger)" },
+    { label: "Revenue Total", value: `$${totalRevenue.toFixed(2)}`, icon: <CreditCard size={26} />, color: "var(--warning)" },
   ];
 
   return (
     <div className="page dashboard">
       <h1 className="page-title">Dashboard</h1>
-      <p className="page-subtitle">Real-time overview of the Urban Smart Parking System</p>
+      <p className="page-subtitle">Real-time overview of ParKing</p>
 
       <div className="stat-grid">
         {stats.map((s) => (
-          <div key={s.label} className="stat-card" style={{ borderTopColor: s.color }}>
-            <span className="stat-icon">{s.icon}</span>
+          <div key={s.label} className="stat-card">
+            <span className="stat-icon" style={{ color: s.color, backgroundColor: `color-mix(in srgb, ${s.color} 15%, transparent)` }}>
+              {s.icon}
+            </span>
             <div>
               <div className="stat-value">{s.value}</div>
               <div className="stat-label">{s.label}</div>
@@ -47,10 +47,7 @@ export default function Dashboard() {
         <div className="panel">
           <h2 className="panel-title">Zone Availability</h2>
           {zones.map((z) => {
-            const zoneOccupied = sessions.filter(
-              (s) => s.status === "Active" && s.zone_id === z.zone_id
-            ).length;
-            const zoneAvailable = Math.max(z.total_slots - zoneOccupied, 0);
+            const zoneAvailable = z.available_slots;
             const pct = z.total_slots > 0
               ? Math.round((zoneAvailable / z.total_slots) * 100)
               : 0;
@@ -65,7 +62,7 @@ export default function Dashboard() {
                     className="zone-bar-fill"
                     style={{
                       width: `${pct}%`,
-                      backgroundColor: pct > 50 ? "#81c784" : pct > 20 ? "#ffb74d" : "#e57373",
+                      backgroundColor: pct > 50 ? "var(--success)" : pct > 20 ? "var(--warning)" : "var(--danger)",
                     }}
                   />
                 </div>

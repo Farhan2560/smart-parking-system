@@ -1,6 +1,6 @@
-# Urban Smart Parking System — Frontend
+# ParkFlow — Frontend
 
-A React + Vite single-page application providing a UI for the **Urban Smart Parking System (USPS)**.
+A React + Vite single-page application providing a UI for the **ParkFlow**.
 
 ## Features
 

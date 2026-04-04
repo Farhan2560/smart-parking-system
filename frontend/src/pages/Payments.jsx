@@ -4,7 +4,7 @@ import "./Slots.css";
 import "./Payments.css";
 
 function formatDateTime(dt) {
-  if (!dt) return "â€”";
+  if (!dt) return "-";
   return new Date(dt).toLocaleString();
 }
 
@@ -31,13 +31,13 @@ export default function Payments() {
         </div>
         <div className="pay-stat">
           <span className="pay-stat-label">Paid</span>
-          <span className="pay-stat-value" style={{ color: "#a5d6a7" }}>
+          <span className="pay-stat-value" style={{ color: "var(--success)" }}>
             {payments.filter((p) => p.status === "Paid").length}
           </span>
         </div>
         <div className="pay-stat">
           <span className="pay-stat-label">Pending</span>
-          <span className="pay-stat-value" style={{ color: "#ffcc80" }}>
+          <span className="pay-stat-value" style={{ color: "var(--warning)" }}>
             {payments.filter((p) => p.status === "Pending").length}
           </span>
         </div>
@@ -61,11 +61,11 @@ export default function Payments() {
             {payments.map((p) => (
               <tr key={p._id}>
                 <td title={p._id}>{String(p._id).slice(-6)}</td>
-                <td>{p.session_ref ? `#${String(p.session_ref._id).slice(-6)}` : '—'}</td>
-                <td>{p.session_ref?.driver_name || '—'}</td>
-                <td>{p.session_ref?.vehicle_plate || '—'}</td>
-                <td>{p.amount != null ? `$${p.amount.toFixed(2)}` : "—"}</td>
-                <td>{p.method || "—"}</td>
+                <td>{p.session_ref ? `#${String(p.session_ref._id).slice(-6)}` : '-'}</td>
+                <td>{p.session_ref?.driver_name || '-'}</td>
+                <td>{p.session_ref?.vehicle_plate || '-'}</td>
+                <td>{p.amount != null ? `$${p.amount.toFixed(2)}` : "-"}</td>
+                <td>{p.method || "-"}</td>
                 <td>{formatDateTime(p.payment_time)}</td>
                 <td>
                   <span

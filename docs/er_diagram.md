@@ -1,4 +1,4 @@
-# Conceptual ER Diagram — Urban Smart Parking System (USPS)
+# Conceptual ER Diagram — ParkFlow
 
 ## 1. Entities and Attributes
 

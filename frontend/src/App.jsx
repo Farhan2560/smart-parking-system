@@ -10,6 +10,7 @@ import Payments from "./pages/Payments";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import CustomerSessions from "./pages/CustomerSessions";
 import CustomerPayments from "./pages/CustomerPayments";
+import Users from "./pages/Users";
 import "./App.css";
 
 // Redirects to /login if not authenticated; renders Navbar + main layout when authenticated.
@@ -41,7 +42,7 @@ export default function App() {
       {/* Public Route */}
       <Route path="/login" element={<Login />} />
 
-      {/* Shared routes — content differs by role */}
+      {/* Shared routes - content differs by role */}
       <Route
         path="/"
         element={
@@ -70,6 +71,7 @@ export default function App() {
       {/* Admin-only routes */}
       <Route path="/zones" element={<ProtectedRoute adminOnly><Zones /></ProtectedRoute>} />
       <Route path="/slots" element={<ProtectedRoute adminOnly><Slots /></ProtectedRoute>} />
+      <Route path="/users" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

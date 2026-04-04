@@ -1,14 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Crown } from 'lucide-react';
 import './Login.css';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { auth, login } = useAuth();
+  const navigate = useNavigate();
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [form, setForm] = useState({ username: '', password: '', full_name: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (auth) {
+      navigate('/');
+    }
+  }, [auth, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -61,8 +70,14 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-brand">
-          <span className="login-brand-icon">🅿</span>
-          <h1 className="login-brand-title">Urban Smart Parking</h1>
+          <h1 className="login-brand-title">
+            Par
+            <span style={{ position: 'relative', display: 'inline-block' }}>
+              <Crown size={38} color="var(--primary)" style={{ position: 'absolute', top: '-22px', left: '50%', transform: 'translateX(-50%) rotate(12deg)' }} />
+              K
+            </span>
+            ing
+          </h1>
         </div>
 
         <h2 className="login-heading">{mode === 'login' ? 'Sign In' : 'Create Account'}</h2>
@@ -118,7 +133,7 @@ export default function Login() {
             />
           </div>
           <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? 'Please wait…' : mode === 'login' ? 'Sign In' : 'Create Account'}
+            {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>
         </form>
 

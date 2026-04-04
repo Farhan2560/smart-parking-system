@@ -1,8 +1,8 @@
-# Urban Smart Parking System (USPS)
+# ParkFlow
 
 ## Problem Statement
 
-Urban areas face a growing challenge of inefficient parking management, leading to traffic congestion, fuel wastage, and driver frustration. The **Urban Smart Parking System (USPS)** is a smart-city application designed to manage parking zones, slots, drivers, vehicles, parking sessions, and payments in a unified database-driven platform.
+Urban areas face a growing challenge of inefficient parking management, leading to traffic congestion, fuel wastage, and driver frustration. The **ParkFlow** is a smart-city application designed to manage parking zones, slots, drivers, vehicles, parking sessions, and payments in a unified database-driven platform.
 
 ### Goals
 

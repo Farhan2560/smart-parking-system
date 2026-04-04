@@ -1,4 +1,4 @@
-# MongoDB Document Schema — Urban Smart Parking System (USPS)
+# MongoDB Document Schema — ParkFlow
 
 ## 1. Design Philosophy: Embedding vs. Referencing
 

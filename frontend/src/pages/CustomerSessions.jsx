@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { useData } from "../data/useData";
 import { useAuth } from "../context/AuthContext";
+import { Car, Accessibility, Zap, Info } from "lucide-react";
 import "./Dashboard.css";
 import "./Slots.css";
 
 const SLOT_TYPE_ICON = {
-  "Standard": "🚗",
-  "Handicapped": "♿",
-  "EV Charging": "⚡",
+  "Standard": <Car size={16} />,
+  "Handicapped": <Accessibility size={16} />,
+  "EV Charging": <Zap size={16} />,
 };
 
 function formatDateTime(dt) {
-  if (!dt) return "—";
+  if (!dt) return "-";
   return new Date(dt).toLocaleString();
 }
 
@@ -37,10 +38,14 @@ export default function CustomerSessions() {
   const selectedZone = zones.find(z => z.zone_name === zoneName);
   const zoneSlots = selectedZone
     ? [...slots.filter(s => s.zone_id === selectedZone.zone_id)]
-        .sort((a, b) => a.slot_number.localeCompare(b.slot_number))
-    : [];
-
-  const hasActiveSession = mySessions.some(s => s.status === "Active");
+          .sort((a, b) => {
+            const typeCompare = (a.slot_type || "").localeCompare(b.slot_type || "");
+            if (typeCompare !== 0) return typeCompare;
+            return a.slot_number.localeCompare(b.slot_number, undefined, { numeric: true, sensitivity: 'base' });
+          })
+      : [];
+  const activeSessions = mySessions.filter(s => s.status === "Active");
+  const activePlates = activeSessions.map(s => s.vehicle_plate?.toLowerCase() || "");
 
   const handleZoneChange = (e) => {
     setZoneName(e.target.value);
@@ -58,8 +63,8 @@ export default function CustomerSessions() {
     e.preventDefault();
     setFormError("");
 
-    if (hasActiveSession) {
-      setFormError("You already have an active session. Please end it before starting a new one.");
+    if (activePlates.includes(vehiclePlate.toLowerCase())) {
+      setFormError(`You already have an active session for the vehicle plate "${vehiclePlate}". You can start a new session for a different vehicle.`);
       return;
     }
     if (!selectedSlot) {
@@ -136,13 +141,13 @@ export default function CustomerSessions() {
 
       <div className="panel" style={{ marginBottom: "20px" }}>
         <h2 className="panel-title">Start a New Parking Session</h2>
-        {hasActiveSession && (
-          <div style={{ background: "#3e2a00", border: "1px solid #f57f17", borderRadius: "8px", padding: "0.7rem 1rem", marginBottom: "1rem", color: "#ffcc80", fontSize: "0.88rem" }}>
-            ⚠️ You already have an active session. End it before starting a new one.
+        {activeSessions.length > 0 && (
+          <div style={{ background: "#3e2a00", border: "1px solid #f57f17", borderRadius: "8px", padding: "0.7rem 1rem", marginBottom: "1rem", color: "var(--warning)", fontSize: "0.88rem" }}>
+            <Info size={16} style={{marginRight: "4px", verticalAlign: "middle"}}/> You currently have {activeSessions.length} active session{activeSessions.length > 1 ? "s" : ""}. You may start another session only if it's for a different vehicle.
           </div>
         )}
         {formError && (
-          <div style={{ background: "#3e1a1a", border: "1px solid #c62828", borderRadius: "8px", padding: "0.7rem 1rem", marginBottom: "1rem", color: "#ef9a9a", fontSize: "0.88rem" }}>
+          <div style={{ background: "#3e1a1a", border: "1px solid #c62828", borderRadius: "8px", padding: "0.7rem 1rem", marginBottom: "1rem", color: "var(--danger)", fontSize: "0.88rem" }}>
             {formError}
           </div>
         )}
@@ -153,20 +158,20 @@ export default function CustomerSessions() {
               value={driverName}
               onChange={e => { setDriverName(e.target.value); setFormError(""); }}
               required
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
+              style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }}
             />
             <input
               placeholder="Vehicle Plate"
               value={vehiclePlate}
               onChange={e => { setVehiclePlate(e.target.value); setFormError(""); }}
               required
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
+              style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }}
             />
             <select
               value={zoneName}
               onChange={handleZoneChange}
               required
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
+              style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }}
             >
               <option value="" disabled>Select Zone</option>
               {zones.map((z) => (
@@ -184,37 +189,37 @@ export default function CustomerSessions() {
                 <span className="slot-legend-item"><span className="slot-legend-dot slot-legend-available" />Available</span>
                 <span className="slot-legend-item"><span className="slot-legend-dot slot-legend-occupied" />Occupied</span>
                 <span className="slot-legend-item"><span className="slot-legend-dot slot-legend-selected" />Selected</span>
-                <span className="slot-legend-item">🚗 Standard</span>
-                <span className="slot-legend-item">♿ Handicapped</span>
-                <span className="slot-legend-item">⚡ EV Charging</span>
+                <span className="slot-legend-item"><Car size={16} style={{marginRight: "4px"}}/> Standard</span>
+                <span className="slot-legend-item"><Accessibility size={16} style={{marginRight: "4px"}}/> Handicapped</span>
+                <span className="slot-legend-item"><Zap size={16} style={{marginRight: "4px"}}/> EV Charging</span>
               </div>
               <div className="slot-grid" role="group" aria-label="Parking slot selection grid">
                 {zoneSlots.map(slot => {
                   const isSelected = selectedSlot?.slot_id === slot.slot_id;
                   const isOccupied = slot.status !== "Available";
-                  const disabledReason = hasActiveSession
-                    ? "You already have an active session"
-                    : isOccupied
-                    ? "This slot is occupied"
-                    : undefined;
+                  const disabledReason = isOccupied ? "This slot is occupied" : undefined;
                   return (
                     <button
                       type="button"
                       key={slot.slot_id}
-                      title={`${slot.slot_number} — ${slot.slot_type} — ${slot.status}`}
+                      title={`${slot.slot_number} - ${slot.slot_type} - ${slot.status}`}
                       aria-label={`${slot.slot_number}, ${slot.slot_type}, ${slot.status}${isSelected ? ", selected" : ""}${disabledReason ? ". " + disabledReason : ""}`}
                       aria-pressed={isSelected}
-                      aria-disabled={!!(isOccupied || hasActiveSession)}
+                      aria-disabled={!!isOccupied}
                       className={
                         "slot-tile" +
                         (isOccupied ? " slot-tile--occupied" : "") +
                         (isSelected ? " slot-tile--selected" : "") +
-                        (!isOccupied && !isSelected ? " slot-tile--available" : "")
+                        (!isOccupied && !isSelected ? " slot-tile--available" : "") +
+                        ((!isOccupied && !isSelected) ? (
+                          slot.slot_type === "EV Charging" ? " slot-tile--ev" :
+                          slot.slot_type === "Handicapped" ? " slot-tile--handicapped" : ""
+                        ) : "")
                       }
                       onClick={() => handleSlotClick(slot)}
-                      disabled={isOccupied || hasActiveSession}
+                      disabled={isOccupied}
                     >
-                      <span className="slot-tile-icon" aria-hidden="true">{SLOT_TYPE_ICON[slot.slot_type] || "🚗"}</span>
+                      <span className="slot-tile-icon" aria-hidden="true">{SLOT_TYPE_ICON[slot.slot_type] || <Car size={16} />}</span>
                       <span className="slot-tile-number">{slot.slot_number}</span>
                     </button>
                   );
@@ -230,8 +235,8 @@ export default function CustomerSessions() {
 
           <button
             type="submit"
-            disabled={hasActiveSession || !selectedSlot}
-            style={{ marginTop: "1rem", padding: "8px 20px", background: (hasActiveSession || !selectedSlot) ? "#444" : "#81c784", color: (hasActiveSession || !selectedSlot) ? "#888" : "#1e1e1e", border: "none", borderRadius: "4px", cursor: (hasActiveSession || !selectedSlot) ? "not-allowed" : "pointer", fontWeight: "bold" }}
+            disabled={!selectedSlot}
+            style={{ marginTop: "1rem", padding: "8px 20px", background: (!selectedSlot) ? "#444" : "var(--success)", color: (!selectedSlot) ? "#888" : "var(--surface)", border: "none", borderRadius: "4px", cursor: (!selectedSlot) ? "not-allowed" : "pointer", fontWeight: "bold" }}
           >
             Start Session
           </button>
@@ -243,7 +248,7 @@ export default function CustomerSessions() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
+          style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }}
         >
           <option value="All">All Statuses</option>
           <option value="Active">Active</option>
@@ -283,8 +288,8 @@ export default function CustomerSessions() {
                   <td>{s.slot_number}</td>
                   <td>{formatDateTime(s.entry_time)}</td>
                   <td>{formatDateTime(s.exit_time)}</td>
-                  <td>{s.duration_hours != null ? `${s.duration_hours}h` : "—"}</td>
-                  <td>{s.amount_due != null ? `$${s.amount_due}` : "—"}</td>
+                  <td>{s.duration_hours != null ? `${s.duration_hours}h` : "-"}</td>
+                  <td>{s.amount_due != null ? `$${s.amount_due}` : "-"}</td>
                   <td>
                     <span className={`badge ${s.status === "Active" ? "badge-active" : "badge-done"}`}>
                       {s.status}
@@ -294,7 +299,7 @@ export default function CustomerSessions() {
                     {s.status === "Active" ? (
                       <button
                         onClick={() => handleEndSession(s._id, s.entry_time)}
-                        style={{ padding: "4px 8px", background: "#e57373", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
+                        style={{ padding: "4px 8px", background: "var(--danger)", color: "var(--text-main)", border: "none", borderRadius: "4px", cursor: "pointer" }}
                       >
                         End
                       </button>

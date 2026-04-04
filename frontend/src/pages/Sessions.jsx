@@ -147,7 +147,7 @@ export default function Sessions() {
             ))}
           </select>
 
-          <button type="submit" style={{ padding: "8px 16px", background: "#81c784", color: "#1e1e1e", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>
+          <button type="submit" style={{ padding: "8px 16px", background: "var(--success)", color: "var(--surface)", border: "none", borderRadius: "var(--radius)", cursor: "pointer", fontWeight: "bold" }}>
             Start Session
           </button>
         </form>
@@ -170,8 +170,6 @@ export default function Sessions() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Driver</th>
               <th>Plate</th>
               <th>Zone</th>
               <th>Slot</th>
@@ -186,8 +184,6 @@ export default function Sessions() {
           <tbody>
             {filteredSessions.map((s) => (
               <tr key={s._id}>
-                <td title={s._id}>{String(s._id).slice(-6)}</td>
-                <td>{s.driver_name}</td>
                 <td>{s.vehicle_plate}</td>
                 <td>{s.zone_name}</td>
                 <td>{s.slot_number}</td>
@@ -202,11 +198,13 @@ export default function Sessions() {
                 </td>
                 <td>
                   {s.status === "Active" ? (
-                    <button 
+                    <button
                       onClick={() => handleEndSession(s._id, s.entry_time)}
-                      style={{ padding: "4px 8px", background: "#e57373", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
+                      style={{ padding: "6px 12px", background: "rgba(248, 113, 113, 0.1)", color: "var(--danger)", border: "1px solid rgba(248, 113, 113, 0.2)", borderRadius: "var(--radius)", cursor: "pointer", fontWeight: "600", fontSize: "0.8rem", transition: "all 0.2s" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--danger)"; e.currentTarget.style.color = "#000"; e.currentTarget.style.boxShadow = "0 0 10px var(--danger-glow)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(248, 113, 113, 0.1)"; e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.boxShadow = "none"; }}
                     >
-                      End
+                      End Session
                     </button>
                   ) : (
                     <span style={{ color: "#aaa" }}>None</span>

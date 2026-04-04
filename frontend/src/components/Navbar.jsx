@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { Crown, LayoutDashboard, Map, Grid3x3, Users, KeySquare, CreditCard, LogOut } from "lucide-react";
 import "./Navbar.css";
 
 export default function Navbar() {
@@ -9,8 +10,14 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <span className="brand-icon">🅿</span>
-        <span className="brand-title">Urban Smart Parking</span>
+        <span className="brand-title">
+          Par
+          <span style={{ position: 'relative', display: 'inline-block' }}>
+            <Crown size={22} color="var(--primary)" style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-65%) rotate(348deg)' }} />
+            K
+          </span>
+          ing
+        </span>
       </div>
       <ul className="navbar-links">
         <li>
@@ -28,6 +35,11 @@ export default function Navbar() {
             <li>
               <NavLink to="/slots" className={({ isActive }) => (isActive ? "active" : "")}>
                 Slots
+              </NavLink>
+            </li>
+            <li>
+              <NavLink to="/users" className={({ isActive }) => (isActive ? "active" : "")}>
+                Users
               </NavLink>
             </li>
           </>
@@ -48,7 +60,7 @@ export default function Navbar() {
           <span className={`role-badge ${isAdmin ? "role-admin" : "role-customer"}`}>
             {isAdmin ? "Admin" : "Customer"}
           </span>
-          {auth?.full_name || auth?.username}
+          {(auth?.full_name || auth?.username || "").toUpperCase()}
         </span>
         <button className="logout-btn" onClick={logout}>
           Sign Out
