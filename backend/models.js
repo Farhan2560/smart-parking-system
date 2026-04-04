@@ -1,5 +1,13 @@
 const mongoose = require('mongoose');
 
+const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['admin', 'customer'], default: 'customer' },
+  full_name: { type: String, default: '' }
+});
+const User = mongoose.model('User', UserSchema);
+
 const ZoneSchema = new mongoose.Schema({
   zone_id: { type: Number, required: true, unique: true },
   zone_name: { type: String, required: true },
@@ -35,7 +43,9 @@ const SessionSchema = new mongoose.Schema({
   exit_time: Date,
   duration_hours: Number,
   amount_due: Number,
-  status: { type: String, enum: ['Active', 'Completed'], default: 'Active' }
+  status: { type: String, enum: ['Active', 'Completed'], default: 'Active' },
+  // Optional FK to User — set when a logged-in customer starts the session
+  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
 const Session = mongoose.model('Session', SessionSchema);
 
@@ -52,4 +62,4 @@ const PaymentSchema = new mongoose.Schema({
 });
 const Payment = mongoose.model('Payment', PaymentSchema);
 
-module.exports = { Zone, Slot, Session, Payment };
+module.exports = { User, Zone, Slot, Session, Payment };

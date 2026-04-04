@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useData } from "../data/useData";
+import { useAuth } from "../context/AuthContext";
 import "./Dashboard.css";
 import "./Slots.css";
 
@@ -9,6 +10,7 @@ function formatDateTime(dt) {
 }
 
 export default function Sessions() {
+  const { auth } = useAuth();
   const { sessions, zones, slots, loading, error, refreshData } = useData(['sessions', 'zones', 'slots']);
   const [formData, setFormData] = useState({ driver_name: "", vehicle_plate: "", zone_name: "", slot_type: "" });
   const [filterStatus, setFilterStatus] = useState("All");
@@ -47,7 +49,10 @@ export default function Sessions() {
 
     await fetch("/api/sessions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${auth.token}`
+      },
       body: JSON.stringify({
         ...formData,
         slot_id: assignedSlot.slot_id,
@@ -68,7 +73,10 @@ export default function Sessions() {
     
     await fetch(`/api/sessions/${sessionId}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${auth.token}`
+      },
       body: JSON.stringify({
         exit_time: exitTime.toISOString(),
         duration_hours: Math.max(0.5, durationObj.toFixed(1)),
