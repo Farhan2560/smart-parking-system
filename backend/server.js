@@ -2,7 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const { Zone, Slot, Session, Payment } = require('./models');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { User, Zone, Slot, Session, Payment } = require('./models');
 
 require('dotenv').config();
 
@@ -35,13 +37,45 @@ const writeLimiter = rateLimit({
 
 app.use('/api/', generalLimiter);
 
-// Fix #3: Admin-only middleware — protects infrastructure mutation endpoints.
-// Set ADMIN_API_KEY in your .env file and supply the same value in the
-// X-Admin-Token request header when calling protected routes.
-const adminAuth = (req, res, next) => {
-  const token = req.headers['x-admin-token'];
-  if (!process.env.ADMIN_API_KEY || token !== process.env.ADMIN_API_KEY) {
-    return res.status(401).json({ error: 'Unauthorized' });
+// JWT secret — must be set in .env for production.
+if (!process.env.JWT_SECRET) {
+  console.warn('WARNING: JWT_SECRET not set. Using an insecure default. Set JWT_SECRET in backend/.env');
+}
+const JWT_SECRET = process.env.JWT_SECRET || 'insecure_dev_default_change_me';
+
+// Middleware: require a valid JWT, attach decoded payload to req.user.
+const requireAuth = (req, res, next) => {
+  const auth = req.headers['authorization'];
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  try {
+    req.user = jwt.verify(auth.slice(7), JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
+
+// Middleware: require a valid JWT with role === 'admin'.
+const requireAdmin = (req, res, next) => {
+  requireAuth(req, res, () => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+  });
+};
+
+// Middleware: attach req.user if a valid JWT is present, but don't block if absent.
+const optionalAuth = (req, res, next) => {
+  const auth = req.headers['authorization'];
+  if (auth && auth.startsWith('Bearer ')) {
+    try {
+      req.user = jwt.verify(auth.slice(7), JWT_SECRET);
+    } catch {
+      // ignore invalid token
+    }
   }
   next();
 };
@@ -64,15 +98,78 @@ const connectWithRetry = () => {
 
 connectWithRetry();
 
+// --- AUTH ---
+
+// Register a new customer account.
+app.post('/api/auth/register', writeLimiter, async (req, res) => {
+  try {
+    const { username, password, full_name } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'username and password are required' });
+    }
+    // Enforce string types to prevent NoSQL operator injection
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'username and password must be strings' });
+    }
+    const existing = await User.findOne({ username });
+    if (existing) {
+      return res.status(409).json({ error: 'Username already taken' });
+    }
+    const hash = await bcrypt.hash(password, 10);
+    const user = new User({ username, password: hash, role: 'customer', full_name: full_name ? String(full_name) : '' });
+    await user.save();
+    res.status(201).json({ message: 'Account created successfully' });
+  } catch (err) {
+    console.error('POST /api/auth/register error:', err);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
+// Login — returns a JWT valid for 24 hours.
+app.post('/api/auth/login', writeLimiter, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'username and password are required' });
+    }
+    // Enforce string types to prevent NoSQL operator injection
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'username and password must be strings' });
+    }
+    const user = await User.findOne({ username });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+    const token = jwt.sign(
+      { userId: String(user._id), role: user.role, username: user.username, full_name: user.full_name },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    res.json({ token, role: user.role, username: user.username, full_name: user.full_name });
+  } catch (err) {
+    console.error('POST /api/auth/login error:', err);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
 // Fix #1: Only allow seeding in development — prevents public database wipe in production
 if (process.env.NODE_ENV === 'development') {
   app.post('/api/seed', writeLimiter, async (req, res) => {
     try {
       // Clear existing
+      await User.deleteMany({});
       await Zone.deleteMany({});
       await Slot.deleteMany({});
       await Session.deleteMany({});
       await Payment.deleteMany({});
+
+      // Seed demo users
+      const adminHash = await bcrypt.hash('admin123', 10);
+      const customerHash = await bcrypt.hash('customer123', 10);
+      await User.insertMany([
+        { username: 'admin', password: adminHash, role: 'admin', full_name: 'System Admin' },
+        { username: 'alice', password: customerHash, role: 'customer', full_name: 'Alice Johnson' }
+      ]);
 
       // The data from frontend
       const zones = [
@@ -113,7 +210,7 @@ if (process.env.NODE_ENV === 'development') {
       await Slot.insertMany(slots);
       await Payment.insertMany(payments);
 
-      res.json({ message: 'Database seeded successfully' });
+      res.json({ message: 'Database seeded successfully. Admin: admin/admin123 | Customer: alice/customer123' });
     } catch (error) {
       console.error('Seed error:', error);
       res.status(500).json({ error: 'An internal server error occurred' });
@@ -132,9 +229,8 @@ app.get('/api/zones', async (req, res) => {
   }
 });
 
-// Fix #2: Destructure only the expected fields to prevent mass assignment.
-// Fix #3: Require admin token for infrastructure mutations.
-app.post('/api/zones', writeLimiter, adminAuth, async (req, res) => {
+// Require admin JWT for infrastructure mutations.
+app.post('/api/zones', writeLimiter, requireAdmin, async (req, res) => {
   try {
     const { zone_id, zone_name, location, total_slots, available_slots, hourly_rate } = req.body;
     const newZone = new Zone({ zone_id, zone_name, location, total_slots, available_slots, hourly_rate });
@@ -166,7 +262,7 @@ app.post('/api/zones', writeLimiter, adminAuth, async (req, res) => {
   }
 });
 
-app.put('/api/zones/:id', writeLimiter, adminAuth, async (req, res) => {
+app.put('/api/zones/:id', writeLimiter, requireAdmin, async (req, res) => {
   try {
     const { zone_name, location, total_slots, available_slots, hourly_rate } = req.body;
     const updated = await Zone.findOneAndUpdate(
@@ -192,7 +288,7 @@ app.get('/api/slots', async (req, res) => {
   }
 });
 
-app.post('/api/slots', writeLimiter, adminAuth, async (req, res) => {
+app.post('/api/slots', writeLimiter, requireAdmin, async (req, res) => {
   try {
     const { slot_id, zone_id, slot_number, slot_type, status } = req.body;
     const obj = new Slot({ slot_id, zone_id, slot_number, slot_type, status });
@@ -204,7 +300,7 @@ app.post('/api/slots', writeLimiter, adminAuth, async (req, res) => {
   }
 });
 
-app.put('/api/slots/:id', writeLimiter, adminAuth, async (req, res) => {
+app.put('/api/slots/:id', writeLimiter, requireAdmin, async (req, res) => {
   try {
     const { slot_number, slot_type, status } = req.body;
     const updated = await Slot.findOneAndUpdate(
@@ -220,9 +316,22 @@ app.put('/api/slots/:id', writeLimiter, adminAuth, async (req, res) => {
 });
 
 // --- SESSIONS ---
+
+// Customer: get only their own sessions (must be before the general /api/sessions route).
+app.get('/api/sessions/my', requireAuth, async (req, res) => {
+  try {
+    const data = await Session.find({ user_id: req.user.userId }).sort({ _id: -1 });
+    res.json(data);
+  } catch (err) {
+    console.error('GET /api/sessions/my error:', err);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
+// Admin: paginated list of all sessions.
 // Fix #6: Paginated response — prevents unbounded queries on large datasets.
 // Clients may pass ?page=<n>&limit=<n>; defaults to page 1, up to 100 records.
-app.get('/api/sessions', async (req, res) => {
+app.get('/api/sessions', requireAdmin, async (req, res) => {
   try {
     const rawPage = req.query.page;
     const rawLimit = req.query.limit;
@@ -241,14 +350,15 @@ app.get('/api/sessions', async (req, res) => {
   }
 });
 
-app.post('/api/sessions', writeLimiter, async (req, res) => {
+app.post('/api/sessions', writeLimiter, requireAuth, async (req, res) => {
   try {
     // Fix #2: Destructure only the expected fields.
     // Fix #8: No manual session_id — MongoDB _id (ObjectId) is unique by design
     //         and eliminates the race condition from manual auto-increment.
     // slot_id and zone_id are FK references; slot_number and zone_name are denormalized display fields.
     const { slot_id, zone_id, slot_number, zone_name, vehicle_plate, driver_name, entry_time, status } = req.body;
-    const obj = new Session({ slot_id, zone_id, slot_number, zone_name, vehicle_plate, driver_name, entry_time, status });
+    const user_id = req.user.userId;
+    const obj = new Session({ slot_id, zone_id, slot_number, zone_name, vehicle_plate, driver_name, entry_time, status, user_id });
     await obj.save();
 
     // Mark slot as occupied using the integer FK — immune to slot_number renames
@@ -277,8 +387,18 @@ app.post('/api/sessions', writeLimiter, async (req, res) => {
   }
 });
 
-app.put('/api/sessions/:id', writeLimiter, async (req, res) => {
+app.put('/api/sessions/:id', writeLimiter, requireAuth, async (req, res) => {
   try {
+    const session = await Session.findById(req.params.id);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Customers can only end their own sessions.
+    if (req.user.role === 'customer' && String(session.user_id) !== req.user.userId) {
+      return res.status(403).json({ error: 'You can only modify your own sessions' });
+    }
+
     // Fix #2: Destructure only the expected fields.
     const { exit_time, duration_hours, amount_due, status } = req.body;
     const updatedSession = await Session.findByIdAndUpdate(
@@ -286,10 +406,6 @@ app.put('/api/sessions/:id', writeLimiter, async (req, res) => {
       { exit_time, duration_hours, amount_due, status },
       { new: true }
     );
-
-    if (!updatedSession) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
 
     if (updatedSession.status === "Completed") {
       // Mark slot as available using the integer FK — immune to slot_number renames
@@ -324,7 +440,24 @@ app.put('/api/sessions/:id', writeLimiter, async (req, res) => {
 });
 
 // --- PAYMENTS ---
-app.get('/api/payments', async (req, res) => {
+
+// Customer: get only payments linked to their own sessions.
+app.get('/api/payments/my', requireAuth, async (req, res) => {
+  try {
+    const mySessions = await Session.find({ user_id: req.user.userId }, '_id');
+    const sessionIds = mySessions.map(s => s._id);
+    const data = await Payment.find({ session_ref: { $in: sessionIds } })
+      .populate('session_ref', 'driver_name vehicle_plate')
+      .sort({ _id: -1 });
+    res.json(data);
+  } catch (err) {
+    console.error('GET /api/payments/my error:', err);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
+// Admin: all payments.
+app.get('/api/payments', requireAdmin, async (req, res) => {
   try {
     // Populate session_ref so the frontend can display driver/plate from the linked Session.
     // This avoids duplicating those fields in the Payment document (3NF).
@@ -336,7 +469,7 @@ app.get('/api/payments', async (req, res) => {
   }
 });
 
-app.post('/api/payments', writeLimiter, async (req, res) => {
+app.post('/api/payments', writeLimiter, requireAdmin, async (req, res) => {
   try {
     // Fix #2: Destructure only the expected fields.
     // Fix #8: payment_id removed — MongoDB _id (ObjectId) is used as identifier.
