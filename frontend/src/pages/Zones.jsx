@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useData } from "../data/useData";
+import { useAuth } from "../context/AuthContext";
 import "./Dashboard.css";
 import "./Zones.css";
 
 export default function Zones() {
+  const { auth } = useAuth();
   const { zones, loading, error, refreshData } = useData(['zones']);
   const [formData, setFormData] = useState({ zone_name: "", location: "", total_slots: "", hourly_rate: "" });
 
@@ -19,7 +21,10 @@ export default function Zones() {
     e.preventDefault();
     await fetch("/api/zones", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${auth.token}`
+      },
       body: JSON.stringify({
         zone_id: Math.floor(Math.random() * 10000),
         zone_name: formData.zone_name,
