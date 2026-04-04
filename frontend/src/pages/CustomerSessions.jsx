@@ -4,6 +4,12 @@ import { useAuth } from "../context/AuthContext";
 import "./Dashboard.css";
 import "./Slots.css";
 
+const SLOT_TYPE_ICON = {
+  "Standard": "🚗",
+  "Handicapped": "♿",
+  "EV Charging": "⚡",
+};
+
 function formatDateTime(dt) {
   if (!dt) return "—";
   return new Date(dt).toLocaleString();
@@ -17,12 +23,10 @@ export default function CustomerSessions() {
   const mySessions = result['sessions/my'];
   const { loading, error, refreshData } = result;
 
-  const [formData, setFormData] = useState({
-    driver_name: auth?.full_name || "",
-    vehicle_plate: "",
-    zone_name: "",
-    slot_type: ""
-  });
+  const [driverName, setDriverName] = useState(auth?.full_name || "");
+  const [vehiclePlate, setVehiclePlate] = useState("");
+  const [zoneName, setZoneName] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
   const [formError, setFormError] = useState("");
 
@@ -30,22 +34,23 @@ export default function CustomerSessions() {
   if (error) return <div className="page"><p>Error: {error}</p></div>;
   if (!zones || !slots || !mySessions) return <div className="page"><p>No data available.</p></div>;
 
-  const selectedZone = zones.find(z => z.zone_name === formData.zone_name);
-  const availableSlotsList = slots.filter(s =>
-    s.status === "Available" &&
-    (!selectedZone || s.zone_id === selectedZone.zone_id)
-  );
-  const availableSlotTypes = [...new Set(availableSlotsList.map(s => s.slot_type))];
+  const selectedZone = zones.find(z => z.zone_name === zoneName);
+  const zoneSlots = selectedZone
+    ? [...slots.filter(s => s.zone_id === selectedZone.zone_id)]
+        .sort((a, b) => a.slot_number.localeCompare(b.slot_number))
+    : [];
 
   const hasActiveSession = mySessions.some(s => s.status === "Active");
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "zone_name") {
-      setFormData({ ...formData, zone_name: value, slot_type: "" });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+  const handleZoneChange = (e) => {
+    setZoneName(e.target.value);
+    setSelectedSlot(null);
+    setFormError("");
+  };
+
+  const handleSlotClick = (slot) => {
+    if (slot.status !== "Available") return;
+    setSelectedSlot(prev => prev?.slot_id === slot.slot_id ? null : slot);
     setFormError("");
   };
 
@@ -57,14 +62,10 @@ export default function CustomerSessions() {
       setFormError("You already have an active session. Please end it before starting a new one.");
       return;
     }
-
-    const eligibleSlots = availableSlotsList.filter(s => s.slot_type === formData.slot_type);
-    if (eligibleSlots.length === 0) {
-      setFormError("No available slots found for this type in the selected zone.");
+    if (!selectedSlot) {
+      setFormError("Please select a parking slot from the map below.");
       return;
     }
-
-    const assignedSlot = eligibleSlots.sort((a, b) => a.slot_number.localeCompare(b.slot_number))[0];
 
     const res = await fetch("/api/sessions", {
       method: "POST",
@@ -73,13 +74,13 @@ export default function CustomerSessions() {
         "Authorization": `Bearer ${auth.token}`
       },
       body: JSON.stringify({
-        driver_name: formData.driver_name,
-        vehicle_plate: formData.vehicle_plate,
-        zone_name: formData.zone_name,
-        slot_type: formData.slot_type,
-        slot_id: assignedSlot.slot_id,
+        driver_name: driverName,
+        vehicle_plate: vehiclePlate,
+        zone_name: zoneName,
+        slot_type: selectedSlot.slot_type,
+        slot_id: selectedSlot.slot_id,
         zone_id: selectedZone.zone_id,
-        slot_number: assignedSlot.slot_number,
+        slot_number: selectedSlot.slot_number,
         entry_time: new Date().toISOString(),
         status: "Active"
       })
@@ -91,7 +92,10 @@ export default function CustomerSessions() {
       return;
     }
 
-    setFormData({ driver_name: auth?.full_name || "", vehicle_plate: "", zone_name: "", slot_type: "" });
+    setDriverName(auth?.full_name || "");
+    setVehiclePlate("");
+    setZoneName("");
+    setSelectedSlot(null);
     refreshData();
   };
 
@@ -128,7 +132,7 @@ export default function CustomerSessions() {
   return (
     <div className="page">
       <h1 className="page-title">My Parking Sessions</h1>
-      <p className="page-subtitle">Start a new session or manage your current parking.</p>
+      <p className="page-subtitle">Pick a zone, select your slot on the map, then start your session.</p>
 
       <div className="panel" style={{ marginBottom: "20px" }}>
         <h2 className="panel-title">Start a New Parking Session</h2>
@@ -142,54 +146,92 @@ export default function CustomerSessions() {
             {formError}
           </div>
         )}
-        <form onSubmit={handleStartSession} style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-          <input
-            name="driver_name"
-            placeholder="Driver Name"
-            value={formData.driver_name}
-            onChange={handleInputChange}
-            required
-            style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
-          />
-          <input
-            name="vehicle_plate"
-            placeholder="Vehicle Plate"
-            value={formData.vehicle_plate}
-            onChange={handleInputChange}
-            required
-            style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
-          />
-          <select
-            name="zone_name"
-            value={formData.zone_name}
-            onChange={handleInputChange}
-            required
-            style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
-          >
-            <option value="" disabled>Select Zone</option>
-            {zones.map((z) => (
-              <option key={z.zone_id} value={z.zone_name}>
-                {z.zone_name} (Free: {z.available_slots} · ${z.hourly_rate.toFixed(2)}/hr)
-              </option>
-            ))}
-          </select>
-          <select
-            name="slot_type"
-            value={formData.slot_type}
-            onChange={handleInputChange}
-            required
-            disabled={!formData.zone_name || availableSlotTypes.length === 0}
-            style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
-          >
-            <option value="" disabled>Select Space Type</option>
-            {availableSlotTypes.map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
+        <form onSubmit={handleStartSession}>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center", marginBottom: "1rem" }}>
+            <input
+              placeholder="Driver Name"
+              value={driverName}
+              onChange={e => { setDriverName(e.target.value); setFormError(""); }}
+              required
+              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
+            />
+            <input
+              placeholder="Vehicle Plate"
+              value={vehiclePlate}
+              onChange={e => { setVehiclePlate(e.target.value); setFormError(""); }}
+              required
+              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
+            />
+            <select
+              value={zoneName}
+              onChange={handleZoneChange}
+              required
+              style={{ padding: "8px", borderRadius: "4px", border: "1px solid #333", background: "#1e1e1e", color: "#fff" }}
+            >
+              <option value="" disabled>Select Zone</option>
+              {zones.map((z) => (
+                <option key={z.zone_id} value={z.zone_name}>
+                  {z.zone_name} (Free: {z.available_slots} · ${z.hourly_rate.toFixed(2)}/hr)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Slot map */}
+          {zoneName && (
+            <div className="slot-map-wrap">
+              <div className="slot-map-legend">
+                <span className="slot-legend-item"><span className="slot-legend-dot slot-legend-available" />Available</span>
+                <span className="slot-legend-item"><span className="slot-legend-dot slot-legend-occupied" />Occupied</span>
+                <span className="slot-legend-item"><span className="slot-legend-dot slot-legend-selected" />Selected</span>
+                <span className="slot-legend-item">🚗 Standard</span>
+                <span className="slot-legend-item">♿ Handicapped</span>
+                <span className="slot-legend-item">⚡ EV Charging</span>
+              </div>
+              <div className="slot-grid" role="group" aria-label="Parking slot selection grid">
+                {zoneSlots.map(slot => {
+                  const isSelected = selectedSlot?.slot_id === slot.slot_id;
+                  const isOccupied = slot.status !== "Available";
+                  const disabledReason = hasActiveSession
+                    ? "You already have an active session"
+                    : isOccupied
+                    ? "This slot is occupied"
+                    : undefined;
+                  return (
+                    <button
+                      type="button"
+                      key={slot.slot_id}
+                      title={`${slot.slot_number} — ${slot.slot_type} — ${slot.status}`}
+                      aria-label={`${slot.slot_number}, ${slot.slot_type}, ${slot.status}${isSelected ? ", selected" : ""}${disabledReason ? ". " + disabledReason : ""}`}
+                      aria-pressed={isSelected}
+                      aria-disabled={!!(isOccupied || hasActiveSession)}
+                      className={
+                        "slot-tile" +
+                        (isOccupied ? " slot-tile--occupied" : "") +
+                        (isSelected ? " slot-tile--selected" : "") +
+                        (!isOccupied && !isSelected ? " slot-tile--available" : "")
+                      }
+                      onClick={() => handleSlotClick(slot)}
+                      disabled={isOccupied || hasActiveSession}
+                    >
+                      <span className="slot-tile-icon" aria-hidden="true">{SLOT_TYPE_ICON[slot.slot_type] || "🚗"}</span>
+                      <span className="slot-tile-number">{slot.slot_number}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedSlot && (
+                <div className="slot-selection-info" aria-live="polite">
+                  Selected: <strong>{selectedSlot.slot_number}</strong> &nbsp;·&nbsp; {selectedSlot.slot_type} <span aria-hidden="true">{SLOT_TYPE_ICON[selectedSlot.slot_type]}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={hasActiveSession}
-            style={{ padding: "8px 16px", background: hasActiveSession ? "#444" : "#81c784", color: hasActiveSession ? "#888" : "#1e1e1e", border: "none", borderRadius: "4px", cursor: hasActiveSession ? "not-allowed" : "pointer", fontWeight: "bold" }}
+            disabled={hasActiveSession || !selectedSlot}
+            style={{ marginTop: "1rem", padding: "8px 20px", background: (hasActiveSession || !selectedSlot) ? "#444" : "#81c784", color: (hasActiveSession || !selectedSlot) ? "#888" : "#1e1e1e", border: "none", borderRadius: "4px", cursor: (hasActiveSession || !selectedSlot) ? "not-allowed" : "pointer", fontWeight: "bold" }}
           >
             Start Session
           </button>

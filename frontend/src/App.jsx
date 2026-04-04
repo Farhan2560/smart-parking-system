@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
@@ -12,36 +12,68 @@ import CustomerSessions from "./pages/CustomerSessions";
 import CustomerPayments from "./pages/CustomerPayments";
 import "./App.css";
 
-export default function App() {
+// Redirects to /login if not authenticated; renders Navbar + main layout when authenticated.
+const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { auth } = useAuth();
-
   if (!auth) {
-    return <Login />;
+    return <Navigate to="/login" replace />;
   }
-
+  if (adminOnly && auth.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
   return (
-    <BrowserRouter>
+    <>
       <Navbar />
-      <main>
-        <Routes>
-          {auth.role === "admin" ? (
-            <>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/zones" element={<Zones />} />
-              <Route path="/slots" element={<Slots />} />
-              <Route path="/sessions" element={<Sessions />} />
-              <Route path="/payments" element={<Payments />} />
-            </>
-          ) : (
-            <>
-              <Route path="/" element={<CustomerDashboard />} />
-              <Route path="/sessions" element={<CustomerSessions />} />
-              <Route path="/payments" element={<CustomerPayments />} />
-            </>
-          )}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
-    </BrowserRouter>
+      <main>{children}</main>
+    </>
+  );
+};
+
+// Renders different elements depending on the user's role.
+const RoleElement = ({ adminEl, customerEl }) => {
+  const { auth } = useAuth();
+  return auth?.role === "admin" ? adminEl : customerEl;
+};
+
+export default function App() {
+  return (
+    <Routes>
+      {/* Public Route */}
+      <Route path="/login" element={<Login />} />
+
+      {/* Shared routes — content differs by role */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <RoleElement adminEl={<Dashboard />} customerEl={<CustomerDashboard />} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sessions"
+        element={
+          <ProtectedRoute>
+            <RoleElement adminEl={<Sessions />} customerEl={<CustomerSessions />} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/payments"
+        element={
+          <ProtectedRoute>
+            <RoleElement adminEl={<Payments />} customerEl={<CustomerPayments />} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin-only routes */}
+      <Route path="/zones" element={<ProtectedRoute adminOnly><Zones /></ProtectedRoute>} />
+      <Route path="/slots" element={<ProtectedRoute adminOnly><Slots /></ProtectedRoute>} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
+
