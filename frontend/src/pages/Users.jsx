@@ -38,14 +38,17 @@ export default function Users() {
         <table className="data-table">
           <thead>
             <tr>
+              <th style={{ width: '60px' }}>ID</th>
               <th>Username</th>
               <th>Full Name</th>
               <th>Role</th>
+              {/* <th>Revenue</th> */}
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
               <tr key={u._id}>
+                <td style={{ color: 'var(--text-muted)' }}>{u.user_id}</td>
                 <td><strong>{u.username}</strong></td>
                 <td>{u.full_name || "-"}</td>
                 <td>
@@ -53,6 +56,7 @@ export default function Users() {
                     {u.role}
                   </span>
                 </td>
+                {/* <td><strong>${(u.revenue || 0).toFixed(2)}</strong></td> */}
               </tr>
             ))}
           </tbody>

@@ -11,12 +11,16 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="navbar-brand">
         <span className="brand-title">
-          Par
+          P
+         <span className="wheel">a</span> 
+          r
           <span style={{ position: 'relative', display: 'inline-block' }}>
-            <Crown size={30} color="var(--primary)" style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-60%) rotate(348deg)' }} />
+            <Crown size={30} color="var(--primary)" style={{ position: 'absolute', top: '-13px', left: '50%', transform: 'translateX(-70%) rotate(340deg)' }} />
             K
           </span>
-          ing
+          i
+          <span className="wheel">n</span>
+          g
         </span>
       </div>
       <ul className="navbar-links">

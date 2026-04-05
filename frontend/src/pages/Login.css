@@ -41,11 +41,60 @@
   margin-bottom: 2.5rem;
   color: var(--primary);
   text-shadow: 0 0 20px var(--primary-glow);
-  transition: transform 0.3s ease;
+  
+  transition: translate 0.8s ease;
+
+  position: relative;
+  padding-bottom: 8px; /* Space for the growing border */
+  cursor: pointer;
+}
+/* .wheel {
+  display: inline-block;
+  transition: translate 0.5s ease;
+  transform: translateY(2px);
 }
 
-.login-brand:hover {
-  animation: spin-wheel 0.5s linear infinite;
+.login-brand:hover .wheel {
+  animation: spin-wheel 0.17s linear infinite;
+  translate: 0 15px;
+  filter: blur(1px);
+  color: #FFD700;
+} */
+
+.wheel {
+  display: inline-flex; 
+  justify-content: center;
+  align-items: center;
+  
+  width: 0.7em; 
+  height: 0.7em;
+  
+  border: 1px dashed black; 
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.login-brand:hover .wheel {
+  animation: spin-wheel 0.2s linear infinite;
+  border: 1px solid #FFD700; 
+  color: #FFD700;
+  translate: 0 15px ;
+  filter: blur(1px);
+}
+
+.login-brand::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0; /* Starts at zero width */
+  height: 2px; /* This is your 'border width' */
+  background-color: #FFD700; /* Gold */
+  transition: width 0.4s ease-in-out;
+}
+
+.login-brand:hover::after {
+  width: 100%; /* Grows to full width on hover */
 }
 
 .login-brand-icon {
@@ -58,7 +107,7 @@
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--text-main);
-  text-shadow: none;
+  text-shadow: 0 5px 20px var(--primary-glow);
 }
 
 .login-heading {

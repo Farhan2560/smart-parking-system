@@ -71,12 +71,16 @@ export default function Login() {
       <div className="login-card">
         <div className="login-brand">
           <h1 className="login-brand-title">
-            Par
+            P
+            <span className="wheel">a</span>
+            r
             <span style={{ position: 'relative', display: 'inline-block' }}>
-              <Crown size={44} color="var(--primary)" style={{ position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-60%) rotate(348deg)' }} />
+              <Crown size={44} color="var(--primary)" style={{ position: 'absolute', top: '-27px', left: '50%', transform: 'translateX(-70%) rotate(340deg)' }} />
               K
             </span>
-            ing
+            i
+            <span className="wheel">n</span>
+            g
           </h1>
         </div>
 
@@ -163,7 +167,7 @@ export default function Login() {
           </div>
           <div className="login-demo-row">
             <span className="login-demo-role customer-role">Customer</span>
-            <code>Tester / Tester123</code>
+            <code>userOne / userOne</code>
           </div>
         </div>
       </div>

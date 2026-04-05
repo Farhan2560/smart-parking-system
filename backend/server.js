@@ -87,9 +87,25 @@ if (!MONGODB_URI) {
   process.exit(1);
 }
 
+const initializeUsers = async () => {
+  const users = await User.find({ user_id: { $exists: false } }).sort({ _id: 1 });
+  if (users.length > 0) {
+    let maxUser = await User.findOne({}, 'user_id').sort({ user_id: -1 });
+    let nextId = maxUser && maxUser.user_id ? maxUser.user_id + 1 : 1;
+    for (const user of users) {
+      user.user_id = nextId++;
+      await user.save();
+    }
+    console.log(`Assigned user_ids to ${users.length} existing users.`);
+  }
+};
+
 const connectWithRetry = () => {
   mongoose.connect(MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB Atlas successfully!'))
+    .then(async () => {
+      console.log('Connected to MongoDB Atlas successfully!');
+      await initializeUsers();
+    })
     .catch((err) => {
       console.error('MongoDB connection failed, retrying in 5 seconds...', err.message);
       setTimeout(connectWithRetry, 5000);
@@ -116,7 +132,18 @@ app.post('/api/auth/register', writeLimiter, async (req, res) => {
       return res.status(409).json({ error: 'Username already taken' });
     }
     const hash = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hash, role: 'customer', full_name: full_name ? String(full_name) : '' });
+    
+    // Assign numerical user_id
+    const maxUser = await User.findOne({}, 'user_id').sort({ user_id: -1 });
+    const nextId = maxUser && maxUser.user_id ? maxUser.user_id + 1 : 1;
+
+    const user = new User({ 
+      user_id: nextId,
+      username, 
+      password: hash, 
+      role: 'customer', 
+      full_name: full_name ? String(full_name) : '' 
+    });
     await user.save();
     res.status(201).json({ message: 'Account created successfully' });
   } catch (err) {
