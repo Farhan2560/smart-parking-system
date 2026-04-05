@@ -1,4 +1,4 @@
-# Conceptual ER Diagram — ParkFlow
+# Conceptual ER Diagram — ParKing
 
 ## 1. Entities and Attributes
 

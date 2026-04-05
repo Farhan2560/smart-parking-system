@@ -1,4 +1,4 @@
-# MongoDB Document Schema — ParkFlow
+# MongoDB Document Schema — ParKing
 
 ## 1. Design Philosophy: Embedding vs. Referencing
 

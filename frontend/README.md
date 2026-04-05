@@ -1,6 +1,6 @@
-# ParkFlow — Frontend
+# ParKing — Frontend
 
-A React + Vite single-page application providing a UI for the **ParkFlow**.
+A React + Vite single-page application providing a UI for **ParKing**.
 
 ## Features
 
