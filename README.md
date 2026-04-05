@@ -2,15 +2,15 @@
 
 ## Problem Statement
 
-Urban areas face a growing challenge of inefficient parking management, leading to traffic congestion, fuel wastage, and driver frustration. **ParKing** is a smart-city application designed to manage parking zones, slots, drivers, vehicles, parking sessions, and payments in a unified database-driven platform.
+Urban areas face a growing challenge of inefficient parking management, leading to traffic congestion, fuel wastage, and driver frustration. **ParKing** is a smart-city application designed to manage parking zones, slots, sessions, and payments through a fully dynamic MongoDB-driven platform with role-based access for admins and customers.
 
 ### Goals
 
 - Provide **real-time slot availability** across multiple parking zones.
-- Enable **driver and vehicle registration** with contact details.
+- Enable **user registration and JWT authentication** with admin and customer roles.
 - Track **parking sessions** (entry/exit) and compute duration and billing automatically.
 - Process **payments** tied to each session.
-- Support both **relational (SQL)** and **NoSQL (MongoDB)** storage strategies.
+- Support **role-based views**: admins manage infrastructure; customers start/end sessions and view their own records.
 
 ---
 
@@ -20,40 +20,51 @@ Urban areas face a growing challenge of inefficient parking management, leading 
 smart-parking-system/
 ├── README.md                      # This file — project overview & problem statement
 ├── backend/                       # Node.js + Express + Mongoose API
-│   ├── server.js                  # REST API routes and DB connection
-│   ├── models.js                  # Mongoose schemas
+│   ├── server.js                  # REST API routes, auth middleware, DB connection
+│   ├── models.js                  # Mongoose schemas (User, Zone, Slot, Session, Payment)
 │   └── package.json
 ├── frontend/                      # React + Vite frontend application
 │   ├── src/
 │   │   ├── components/            # Shared UI components (Navbar)
+│   │   ├── context/               # AuthContext — JWT auth state management
 │   │   ├── data/useData.js        # API data hook (fetch + refresh)
-│   │   └── pages/                 # Dashboard, Zones, Slots, Sessions, Payments
+│   │   └── pages/                 # Login, Dashboard, Zones, Slots, Sessions, Payments, Users
 │   ├── package.json
 │   └── README.md                  # Frontend setup & usage instructions
 ├── docs/
 │   ├── er_diagram.md              # Conceptual ER design (entities, attributes, relationships)
-│   └── normalization_report.md    # 3NF normalization analysis for each relation
+│   └── normalization_report.md    # 3NF normalization analysis for the reference SQL schema
 ├── sql/
-│   ├── schema.sql                 # Relational schema — DDL with PKs, FKs, constraints
-│   ├── sample_data.sql            # Sample INSERT statements for all tables
+│   ├── schema.sql                 # Reference relational schema — DDL with PKs, FKs, constraints
 │   └── queries.sql                # Useful SQL queries (derived attributes, reports)
 └── mongodb/
-    ├── schema.md                  # MongoDB document schema design (embedding vs referencing)
-    └── crud_examples.js           # CRUD operation examples in MongoDB shell syntax
+    └── schema.md                  # MongoDB document schema design with field definitions
 ```
 
 ---
 
-## Entities Overview
+## Collections Overview
 
-| Entity            | Description                                               |
-|-------------------|-----------------------------------------------------------|
-| `Parking_Zone`    | A geographic zone containing many parking slots           |
-| `Parking_Slot`    | An individual parking space within a zone                 |
-| `Driver`          | A registered user who parks vehicles                      |
-| `Vehicle`         | A vehicle owned by a driver                               |
-| `Parking_Session` | Records a vehicle occupying a slot (M:N resolution table) |
-| `Payment`         | Payment record tied to a parking session                  |
+| Collection  | Description                                                      |
+|-------------|------------------------------------------------------------------|
+| `users`     | Registered users (admin or customer role) with hashed passwords |
+| `zones`     | Parking zones with location, capacity, and hourly rate          |
+| `slots`     | Individual parking spaces within a zone                         |
+| `sessions`  | Parking session records linking a vehicle to a slot             |
+| `payments`  | Payment records linked 1:1 to parking sessions                  |
+
+---
+
+## Authentication
+
+The API uses **JWT (JSON Web Token)** authentication:
+
+- `POST /api/auth/register` — create a new customer account
+- `POST /api/auth/login` — receive a JWT valid for 24 hours
+
+Roles:
+- **admin** — full access to zones, slots, all sessions and payments; user management
+- **customer** — can start/end their own sessions and view their own sessions and payments
 
 ---
 
@@ -67,6 +78,7 @@ Create a backend env file at `backend/.env`:
 
 ```
 MONGODB_URI=your_mongodb_atlas_connection_string
+JWT_SECRET=your_jwt_secret_key
 ```
 
 Then start the API server:
@@ -78,6 +90,14 @@ npm start
 ```
 
 The API runs on **http://localhost:5000**.
+
+To seed the database with demo data (development only):
+
+```bash
+curl -X POST http://localhost:5000/api/seed
+```
+
+Default demo credentials after seeding: `admin / admin123` and `alice / customer123`.
 
 ### Frontend (React + Vite)
 
@@ -91,24 +111,16 @@ npm run dev
 
 Open **http://localhost:5173** in your browser. See [`frontend/README.md`](frontend/README.md) for full details.
 
-### SQL (PostgreSQL / MySQL)
+### SQL (Reference Schema)
+
+The `sql/` directory contains a reference relational schema and example queries for documentation purposes. The application uses MongoDB as its primary database.
 
 ```bash
-# Create schema
-psql -U postgres -d usps_db -f sql/schema.sql
-
-# Load sample data
-psql -U postgres -d usps_db -f sql/sample_data.sql
+# Create reference schema (PostgreSQL)
+psql -U postgres -d parking_db -f sql/schema.sql
 
 # Run example queries
-psql -U postgres -d usps_db -f sql/queries.sql
-```
-
-### MongoDB
-
-```bash
-# Open MongoDB shell and run CRUD examples
-mongosh usps_db --file mongodb/crud_examples.js
+psql -U postgres -d parking_db -f sql/queries.sql
 ```
 
 ---
@@ -117,11 +129,12 @@ mongosh usps_db --file mongodb/crud_examples.js
 
 - If you are using MongoDB Atlas, ensure your current IP is added to the Atlas Network Access allowlist.
 - The frontend proxies `/api/*` to `http://localhost:5000` in development.
+- The seed endpoint (`POST /api/seed`) is only available when `NODE_ENV` is `development` (or not set).
 
 ---
 
 ## Documentation
 
-- **[ER Diagram & Conceptual Design](docs/er_diagram.md)** — Entity attributes, composite/multivalued/derived attributes, and relationships.
-- **[Normalization Report](docs/normalization_report.md)** — Functional dependencies and 1NF → 3NF analysis per table.
-- **[MongoDB Schema Design](mongodb/schema.md)** — Document model with embedding vs. referencing rationale.
+- **[ER Diagram & Conceptual Design](docs/er_diagram.md)** — Entity attributes and relationships for the actual MongoDB collections.
+- **[Normalization Report](docs/normalization_report.md)** — Functional dependencies and 1NF → 3NF analysis for the reference SQL schema.
+- **[MongoDB Schema Design](mongodb/schema.md)** — Document model with field definitions and design rationale.
