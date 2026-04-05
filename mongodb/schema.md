@@ -1,153 +1,190 @@
 # MongoDB Document Schema — ParKing
 
-## 1. Design Philosophy: Embedding vs. Referencing
+## Collections
 
-MongoDB document modeling requires a choice between **embedding** (nested sub-documents) and **referencing** (storing an `_id` of another document). The decision is guided by:
-
-| Factor              | Prefer Embedding                        | Prefer Referencing                        |
-|---------------------|-----------------------------------------|-------------------------------------------|
-| **Access pattern**  | Data is almost always read together     | Data is read independently or rarely      |
-| **Data size**       | Sub-document is small and bounded       | Sub-document is large or unbounded        |
-| **Update frequency**| Sub-document changes with parent        | Sub-document changes independently        |
-| **Duplication**     | Acceptable for read performance         | Must avoid duplication                    |
+The application uses five MongoDB collections managed via Mongoose. All collections use MongoDB `_id` (ObjectId) as the primary key. Integer `*_id` fields (e.g., `zone_id`, `slot_id`) are stored as additional indexed fields for human-readable references and foreign-key lookups.
 
 ---
 
-## 2. Collection Design
+### `users` Collection
 
-### 2.1 `parking_zones` Collection
-Zones are relatively static and small. Slots are embedded for fast availability lookups within a zone.
-
-> **Decision: Embed `slots` array inside each zone document.**
-
-**Rationale:** A zone is almost always queried together with its slots (e.g., "show all available slots in zone X"). Embedding avoids a costly join and is acceptable since the number of slots per zone is bounded (e.g., < 200).
+Stores registered users with hashed passwords and roles.
 
 ```json
 {
-  "_id": "zone_1",
-  "zone_name": "Zone A – Downtown",
-  "location": {
-    "street": "100 Main St",
-    "city": "Springfield",
-    "zip_code": "62701"
-  },
-  "slot_rate": 3.50,
-  "zone_capacity": 50,
-  "slots": [
-    {
-      "slot_id": "slot_101",
-      "slot_number": "A-01",
-      "slot_type": "Standard",
-      "slot_status": "Available"
-    },
-    {
-      "slot_id": "slot_102",
-      "slot_number": "A-02",
-      "slot_type": "Compact",
-      "slot_status": "Occupied"
-    }
-  ]
+  "_id": "<ObjectId>",
+  "user_id": 1,
+  "username": "alice",
+  "password": "<bcrypt hash>",
+  "role": "customer",
+  "full_name": "Alice Johnson"
 }
 ```
 
+| Field     | Type     | Constraints                          |
+|-----------|----------|--------------------------------------|
+| _id       | ObjectId | Primary key (auto-generated)         |
+| user_id   | Number   | Unique, sequential integer           |
+| username  | String   | Required, unique                     |
+| password  | String   | Required, bcrypt-hashed              |
+| role      | String   | `"admin"` or `"customer"` (default) |
+| full_name | String   | Display name (default: `""`)         |
+
 ---
 
-### 2.2 `drivers` Collection
-Driver contact numbers are bounded and always read with the driver profile.  
-Vehicles owned by the driver are relatively few and are always listed on the driver profile.
+### `zones` Collection
 
-> **Decision: Embed `contact_numbers` and `vehicles` arrays inside Driver documents.**
-
-**Rationale:** A driver profile page always shows all contacts and all vehicles. Embedding reduces round-trips and reflects the 1:N ownership relationship. The arrays are bounded (a driver rarely owns > 10 vehicles or > 5 contact numbers).
+Stores parking zones with real-time slot availability.
 
 ```json
 {
-  "_id": "driver_1",
-  "name": {
-    "first": "Alice",
-    "last": "Johnson"
-  },
-  "email": "alice.johnson@email.com",
-  "license_number": "DL-IL-100001",
-  "contact_numbers": [
-    { "number": "217-555-0101", "type": "Mobile" },
-    { "number": "217-555-0102", "type": "Home" }
-  ],
-  "vehicles": [
-    {
-      "vehicle_id": "vehicle_1",
-      "license_plate": "IL-ABC-1234",
-      "vehicle_model": "Toyota Corolla 2022",
-      "fuel_type": "Petrol"
-    },
-    {
-      "vehicle_id": "vehicle_2",
-      "license_plate": "IL-XYZ-5678",
-      "vehicle_model": "Nissan Leaf 2023",
-      "fuel_type": "Electric"
-    }
-  ]
+  "_id": "<ObjectId>",
+  "zone_id": 1,
+  "zone_name": "Downtown Central",
+  "location": "123 Main St",
+  "total_slots": 50,
+  "available_slots": 48,
+  "hourly_rate": 3.5
 }
 ```
 
+| Field           | Type     | Constraints                   |
+|-----------------|----------|-------------------------------|
+| _id             | ObjectId | Primary key (auto-generated)  |
+| zone_id         | Number   | Required, unique               |
+| zone_name       | String   | Required                       |
+| location        | String   | Required                       |
+| total_slots     | Number   | Required, min: 1               |
+| available_slots | Number   | Required, min: 0               |
+| hourly_rate     | Number   | Required, min: 0               |
+
 ---
 
-### 2.3 `parking_sessions` Collection
-A session links a vehicle, a slot, and a payment. These entities live in separate collections and are referenced by ID.
+### `slots` Collection
 
-> **Decision: Use References for `vehicle_id`, `slot_id`, and `zone_id`.**
-
-**Rationale:** Sessions are created frequently and queried independently (e.g., billing history, zone occupancy reports). Referencing avoids duplicating vehicle and slot data in every session. The `total_duration` and `total_bill` are derived and computed at query time rather than stored.
+Stores individual parking spaces. Each slot references its zone by integer `zone_id`.
 
 ```json
 {
-  "_id": "session_1001",
-  "vehicle_id": "vehicle_1",
-  "slot_id": "slot_101",
-  "zone_id": "zone_1",
-  "entry_time": { "$date": "2024-03-10T08:00:00Z" },
-  "exit_time":  { "$date": "2024-03-10T10:30:00Z" },
-  "payment": {
-    "payment_id": "pay_5001",
-    "amount": 8.75,
-    "payment_method": "Card",
-    "payment_status": "Completed",
-    "payment_time": { "$date": "2024-03-10T10:32:00Z" }
-  }
+  "_id": "<ObjectId>",
+  "slot_id": 1,
+  "zone_id": 1,
+  "slot_number": "DO-001",
+  "slot_type": "Standard",
+  "status": "Available"
 }
 ```
 
-> **Decision: Embed `payment` inside the session document.**
+| Field       | Type     | Constraints                                              |
+|-------------|----------|----------------------------------------------------------|
+| _id         | ObjectId | Primary key (auto-generated)                             |
+| slot_id     | Number   | Required, unique                                         |
+| zone_id     | Number   | Required, references `zones.zone_id`                    |
+| slot_number | String   | Required, unique                                         |
+| slot_type   | String   | `"Standard"`, `"Handicapped"`, `"EV Charging"` (default: `"Standard"`) |
+| status      | String   | `"Available"`, `"Occupied"`, `"Maintenance"` (default: `"Available"`) |
 
-**Rationale:** A payment is 1:1 with a session and is always read/updated with the session. Embedding the payment avoids a separate collection lookup and simplifies the checkout workflow (update session → embed payment in one atomic write).
+**Slot auto-generation:** When a new zone is created via `POST /api/zones`, slots are automatically generated for all `total_slots` positions. Slot numbers follow the pattern `<ZO>-001` where `<ZO>` is the first two characters of the zone name. Every 8th slot is `"EV Charging"` and every 10th is `"Handicapped"`.
 
 ---
 
-## 3. Index Recommendations
+### `sessions` Collection
+
+Records a vehicle occupying a parking slot. Denormalized `slot_number` and `zone_name` fields are stored at creation time for efficient display without lookups.
+
+```json
+{
+  "_id": "<ObjectId>",
+  "slot_id": 1,
+  "zone_id": 1,
+  "slot_number": "DO-001",
+  "zone_name": "Downtown Central",
+  "vehicle_plate": "ABC-1234",
+  "driver_name": "Alice Johnson",
+  "entry_time": "2026-03-29T08:00:00.000Z",
+  "exit_time": "2026-03-29T10:30:00.000Z",
+  "duration_hours": 2.5,
+  "amount_due": 8.75,
+  "status": "Completed",
+  "user_id": "<ObjectId>"
+}
+```
+
+| Field         | Type     | Constraints                                             |
+|---------------|----------|---------------------------------------------------------|
+| _id           | ObjectId | Primary key (auto-generated)                            |
+| slot_id       | Number   | Required, references `slots.slot_id`                   |
+| zone_id       | Number   | Required, references `zones.zone_id`                   |
+| slot_number   | String   | Denormalized from Slot at session start                 |
+| zone_name     | String   | Denormalized from Zone at session start                 |
+| vehicle_plate | String   | Required                                                |
+| driver_name   | String   | Required                                                |
+| entry_time    | Date     | Required                                                |
+| exit_time     | Date     | Null while session is active; set on checkout           |
+| duration_hours| Number   | Computed at checkout (`exit_time − entry_time` in hours)|
+| amount_due    | Number   | Computed at checkout (`duration_hours × hourly_rate`)   |
+| status        | String   | `"Active"` or `"Completed"` (default: `"Active"`)      |
+| user_id       | ObjectId | References `users._id` (set for authenticated sessions) |
+
+**Side effects on session start:** The linked slot's `status` is set to `"Occupied"` and the zone's `available_slots` is decremented by 1. A `Pending` payment document is created automatically.
+
+**Side effects on checkout:** The slot's `status` reverts to `"Available"`, the zone's `available_slots` is incremented by 1, and the linked payment is updated to `"Paid"` with the computed amount.
+
+---
+
+### `payments` Collection
+
+Stores one payment record per session. The payment is created automatically as `"Pending"` when a session starts and updated to `"Paid"` on checkout.
+
+```json
+{
+  "_id": "<ObjectId>",
+  "session_ref": "<ObjectId>",
+  "amount": 8.75,
+  "method": "Credit Card",
+  "payment_time": "2026-03-29T10:32:00.000Z",
+  "status": "Paid"
+}
+```
+
+| Field        | Type     | Constraints                                           |
+|--------------|----------|-------------------------------------------------------|
+| _id          | ObjectId | Primary key (auto-generated)                          |
+| session_ref  | ObjectId | Required, references `sessions._id`                  |
+| amount       | Number   | Populated on checkout                                 |
+| method       | String   | Payment method (e.g., `"Credit Card"`)               |
+| payment_time | Date     | Timestamp of the transaction; set on checkout         |
+| status       | String   | `"Pending"` (default) or `"Paid"`                    |
+
+---
+
+## Index Recommendations
 
 ```javascript
-// Fast slot availability lookup by zone and status
-db.parking_zones.createIndex({ "slots.slot_status": 1, "location.zip_code": 1 });
+// Fast slot lookup by zone
+db.slots.createIndex({ "zone_id": 1 });
 
-// Driver lookup by email (unique)
-db.drivers.createIndex({ "email": 1 }, { unique: true });
+// Active session lookup by slot (prevents double-booking)
+db.sessions.createIndex({ "slot_id": 1, "status": 1 });
 
-// Vehicle lookup by license plate (unique)
-db.drivers.createIndex({ "vehicles.license_plate": 1 }, { unique: true });
+// Session history by user
+db.sessions.createIndex({ "user_id": 1, "entry_time": -1 });
 
-// Active session lookup by slot
-db.parking_sessions.createIndex({ "slot_id": 1, "exit_time": 1 });
+// Payment lookup by session
+db.payments.createIndex({ "session_ref": 1 }, { unique: true });
 
-// Session history by vehicle
-db.parking_sessions.createIndex({ "vehicle_id": 1, "entry_time": -1 });
+// User lookup by username (unique)
+db.users.createIndex({ "username": 1 }, { unique: true });
 ```
 
 ---
 
-## 4. Collection Summary
+## Design Decisions
 
-| Collection         | Embedding                              | Referencing                     |
-|--------------------|----------------------------------------|---------------------------------|
-| `parking_zones`    | `slots[]` embedded in zone             | —                               |
-| `drivers`          | `contact_numbers[]`, `vehicles[]`      | —                               |
-| `parking_sessions` | `payment` embedded in session          | `vehicle_id`, `slot_id`, `zone_id` |
+| Decision | Rationale |
+|----------|-----------|
+| Slots stored in a **separate collection** (not embedded in zones) | Slots are updated independently (status changes) and can be queried individually. Embedding would require array element updates on every status change. |
+| `slot_number` / `zone_name` **denormalized** in sessions | Avoids joins when displaying session history; values are fixed at the time of session creation and do not change. |
+| `driver_name` / `vehicle_plate` stored **directly on sessions** (not in a separate User sub-document) | Customers enter these fields per session; not all sessions are linked to a registered user. |
+| Payment stored in a **separate collection** | Payments have an independent lifecycle (Pending → Paid) and are queried independently for billing history. |
+| Integer `zone_id` / `slot_id` used as FKs in sessions | Provides stable references that are immune to name renames and easier to use in range queries than ObjectIds. |
