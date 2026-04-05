@@ -60,3 +60,31 @@ a {
 a:hover {
   text-shadow: 0 0 8px var(--primary-glow);
 }
+
+button {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:not(.logout-btn):not([style*="var(--danger)"]):not([style*="var(--success)"]):hover:not(:disabled) {
+  background-color: var(--primary) !important;
+  color: var(--primary-fg) !important;
+  box-shadow: 0 0 15px var(--primary-glow) !important;
+}
+
+button[style*="var(--danger)"]:hover:not(:disabled) {
+  background-color: var(--danger) !important;
+  color: var(--background) !important;
+  box-shadow: 0 0 15px var(--danger-glow) !important;
+}
+
+button[style*="var(--success)"]:hover:not(:disabled) {
+  background-color: var(--success) !important;
+  color: var(--background) !important;
+  box-shadow: 0 0 15px var(--success-glow) !important;
+}
+
+@keyframes spin-wheel {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -41,6 +41,11 @@
   margin-bottom: 2.5rem;
   color: var(--primary);
   text-shadow: 0 0 20px var(--primary-glow);
+  transition: transform 0.3s ease;
+}
+
+.login-brand:hover {
+  animation: spin-wheel 0.5s linear infinite;
 }
 
 .login-brand-icon {
@@ -49,7 +54,7 @@
 }
 
 .login-brand-title {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--text-main);
@@ -172,7 +177,6 @@
 .login-btn:hover:not(:disabled) {
   background: #7dd3fc;
   box-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
-  transform: translateY(-1px);
 }
 
 .login-btn:disabled {
@@ -237,4 +241,10 @@
   font-size: 0.7rem;
   font-weight: 600;
   border: 1px solid transparent;
+}
+
+@media (max-width: 768px) {
+  .login-card {
+    padding: 2.5rem 1.5rem;
+  }
 }

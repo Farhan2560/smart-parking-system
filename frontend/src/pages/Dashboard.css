@@ -55,7 +55,7 @@
 .stat-card:hover {
   transform: translateY(-3px);
   border-color: var(--accent);
-  box-shadow: 0 10px 30px -10px var(--accent-glow), var(--ambient-shadow);
+  box-shadow: var(--ambient-shadow);
 }
 
 .stat-card:hover::before {
@@ -213,10 +213,9 @@
 }
 
 .badge-active {
-  background: rgba(56, 189, 248, 0.1);
-  color: var(--primary);
-  border-color: rgba(56, 189, 248, 0.2);
-  
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--success);
+  border-color: rgba(52, 211, 153, 0.2);
 }
 
 .badge-done {
@@ -250,4 +249,13 @@
   color: var(--danger);
   border-color: rgba(248, 113, 113, 0.2);
   
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 1.5rem 1rem;
+  }
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
 }

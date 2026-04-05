@@ -81,3 +81,9 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
+@media (max-width: 768px) {
+  .zones-grid {
+    grid-template-columns: 1fr;
+  }
+}

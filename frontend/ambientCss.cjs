@@ -62,6 +62,34 @@ a {
 a:hover {
   text-shadow: 0 0 8px var(--primary-glow);
 }
+
+button {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:not(.logout-btn):not([style*="var(--danger)"]):not([style*="var(--success)"]):hover:not(:disabled) {
+  background-color: var(--primary) !important;
+  color: var(--primary-fg) !important;
+  box-shadow: 0 0 15px var(--primary-glow) !important;
+}
+
+button[style*="var(--danger)"]:hover:not(:disabled) {
+  background-color: var(--danger) !important;
+  color: var(--background) !important;
+  box-shadow: 0 0 15px var(--danger-glow) !important;
+}
+
+button[style*="var(--success)"]:hover:not(:disabled) {
+  background-color: var(--success) !important;
+  color: var(--background) !important;
+  box-shadow: 0 0 15px var(--success-glow) !important;
+}
+
+@keyframes spin-wheel {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 `;
 
 const appCss = `
@@ -127,7 +155,7 @@ const dashboardCss = `
 .stat-card:hover {
   transform: translateY(-3px);
   border-color: var(--accent);
-  box-shadow: 0 10px 30px -10px var(--accent-glow), var(--ambient-shadow);
+  box-shadow: var(--ambient-shadow);
 }
 
 .stat-card:hover::before {
@@ -285,10 +313,9 @@ const dashboardCss = `
 }
 
 .badge-active {
-  background: rgba(56, 189, 248, 0.1);
-  color: var(--primary);
-  border-color: rgba(56, 189, 248, 0.2);
-  
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--success);
+  border-color: rgba(52, 211, 153, 0.2);
 }
 
 .badge-done {
@@ -323,6 +350,15 @@ const dashboardCss = `
   border-color: rgba(248, 113, 113, 0.2);
   
 }
+
+@media (max-width: 768px) {
+  .page {
+    padding: 1.5rem 1rem;
+  }
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+}
 `;
 
 const navbarCss = `
@@ -350,6 +386,11 @@ const navbarCss = `
   flex-shrink: 0;
   color: var(--primary);
   text-shadow: 0 0 20px var(--primary-glow);
+  transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover {
+  animation: spin-wheel 0.5s linear infinite;
 }
 
 .brand-icon {
@@ -358,7 +399,7 @@ const navbarCss = `
 }
 
 .brand-title {
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--text-main);
@@ -462,6 +503,27 @@ const navbarCss = `
   background: rgba(248, 113, 113, 0.1);
   box-shadow: 0 0 15px var(--danger-glow);
 }
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 1rem;
+    height: auto;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .navbar-links {
+    margin-left: 0;
+    width: 100%;
+    order: 3;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 0.5rem;
+  }
+  .navbar-user {
+    order: 2;
+  }
+}
 `;
 
 const loginCss = `
@@ -507,6 +569,11 @@ const loginCss = `
   margin-bottom: 2.5rem;
   color: var(--primary);
   text-shadow: 0 0 20px var(--primary-glow);
+  transition: transform 0.3s ease;
+}
+
+.login-brand:hover {
+  animation: spin-wheel 0.5s linear infinite;
 }
 
 .login-brand-icon {
@@ -515,7 +582,7 @@ const loginCss = `
 }
 
 .login-brand-title {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--text-main);
@@ -638,7 +705,6 @@ const loginCss = `
 .login-btn:hover:not(:disabled) {
   background: #7dd3fc;
   box-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
-  transform: translateY(-1px);
 }
 
 .login-btn:disabled {
@@ -704,6 +770,12 @@ const loginCss = `
   font-weight: 600;
   border: 1px solid transparent;
 }
+
+@media (max-width: 768px) {
+  .login-card {
+    padding: 2.5rem 1.5rem;
+  }
+}
 `;
 
 const slotsCss = `
@@ -744,6 +816,11 @@ const slotsCss = `
   background-repeat: no-repeat;
   background-position: right 1rem top 50%;
   background-size: 0.6rem auto;
+}
+
+.slots-filters select option {
+  background: var(--surface);
+  color: var(--text-main);
 }
 
 .slots-filters select:focus {
@@ -883,7 +960,6 @@ const slotsCss = `
 }
 
 .slot-tile--available:hover:not(:disabled) {
-  transform: translateY(-4px);
   border-color: var(--success);
   box-shadow: 0 8px 20px -5px var(--success-glow);
   background: rgba(52, 211, 153, 0.1);
@@ -931,6 +1007,27 @@ const slotsCss = `
   gap: 0.75rem;
   font-weight: 500;
   box-shadow: 0 0 20px var(--primary-glow);
+}
+
+@media (max-width: 768px) {
+  .slots-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .slots-filters label {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .slots-filters select {
+    width: 100%;
+  }
+  .slots-table-wrap {
+    overflow-x: auto;
+  }
+  .slot-grid {
+    grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+    gap: 12px;
+  }
 }
 `;
 
@@ -1017,6 +1114,12 @@ const zonesCss = `
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
+@media (max-width: 768px) {
+  .zones-grid {
+    grid-template-columns: 1fr;
+  }
+}
 `;
 
 const paymentsCss = `
@@ -1067,6 +1170,16 @@ const paymentsCss = `
   font-weight: 700;
   color: var(--text-main);
   letter-spacing: -0.02em;
+}
+
+@media (max-width: 768px) {
+  .pay-stats {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .data-table-wrap {
+    overflow-x: auto;
+  }
 }
 `;
 

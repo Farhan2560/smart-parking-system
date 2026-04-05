@@ -38,6 +38,11 @@
   background-size: 0.6rem auto;
 }
 
+.slots-filters select option {
+  background: var(--surface);
+  color: var(--text-main);
+}
+
 .slots-filters select:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 1px var(--primary), 0 0 15px var(--primary-glow);
@@ -175,7 +180,6 @@
 }
 
 .slot-tile--available:hover:not(:disabled) {
-  transform: translateY(-4px);
   border-color: var(--success);
   box-shadow: 0 8px 20px -5px var(--success-glow);
   background: rgba(52, 211, 153, 0.1);
@@ -223,4 +227,25 @@
   gap: 0.75rem;
   font-weight: 500;
   box-shadow: 0 0 20px var(--primary-glow);
+}
+
+@media (max-width: 768px) {
+  .slots-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .slots-filters label {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .slots-filters select {
+    width: 100%;
+  }
+  .slots-table-wrap {
+    overflow-x: auto;
+  }
+  .slot-grid {
+    grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+    gap: 12px;
+  }
 }

@@ -13,7 +13,7 @@ export default function Navbar() {
         <span className="brand-title">
           Par
           <span style={{ position: 'relative', display: 'inline-block' }}>
-            <Crown size={22} color="var(--primary)" style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-65%) rotate(348deg)' }} />
+            <Crown size={30} color="var(--primary)" style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-60%) rotate(348deg)' }} />
             K
           </span>
           ing

@@ -47,3 +47,13 @@
   color: var(--text-main);
   letter-spacing: -0.02em;
 }
+
+@media (max-width: 768px) {
+  .pay-stats {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .data-table-wrap {
+    overflow-x: auto;
+  }
+}

@@ -73,7 +73,7 @@ export default function Login() {
           <h1 className="login-brand-title">
             Par
             <span style={{ position: 'relative', display: 'inline-block' }}>
-              <Crown size={38} color="var(--primary)" style={{ position: 'absolute', top: '-22px', left: '50%', transform: 'translateX(-50%) rotate(12deg)' }} />
+              <Crown size={44} color="var(--primary)" style={{ position: 'absolute', top: '-24px', left: '50%', transform: 'translateX(-50%) rotate(12deg)' }} />
               K
             </span>
             ing
