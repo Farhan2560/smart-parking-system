@@ -45,7 +45,7 @@
   transition: translate 0.8s ease;
 
   position: relative;
-  padding-bottom: 8px; /* Space for the growing border */
+  padding-bottom: 9px; /* Space for the growing border */
   cursor: pointer;
 }
 /* .wheel {
@@ -75,9 +75,9 @@
 }
 
 .login-brand:hover .wheel {
-  animation: spin-wheel 0.2s linear infinite;
-  border: 1px solid #FFD700; 
-  color: #FFD700;
+  animation: spin-wheel 0.25s linear infinite;
+  border: 1px solid var(--primary); 
+  color: var(--primary);
   translate: 0 15px ;
   filter: blur(1px);
 }
@@ -87,14 +87,14 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 0; /* Starts at zero width */
-  height: 2px; /* This is your 'border width' */
-  background-color: #FFD700; /* Gold */
+  width: 0; 
+  height: 3px; 
+  background-color: var(--primary);
   transition: width 0.4s ease-in-out;
 }
 
 .login-brand:hover::after {
-  width: 100%; /* Grows to full width on hover */
+  width: 100%; 
 }
 
 .login-brand-icon {
@@ -251,10 +251,7 @@
   transition: all 0.3s;
 }
 
-.login-link-btn:hover {
-  text-shadow: 0 0 10px var(--primary-glow);
-  color: #7dd3fc;
-}
+
 
 .login-demo {
   margin-top: 2.5rem;

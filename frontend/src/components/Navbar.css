@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: rgba(24, 24, 27, 0.8);
+  background-color: rgba(24, 24, 27, 0.1);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
@@ -65,7 +65,7 @@
 }
 
 .navbar-brand:hover .wheel {
-  animation: spin-wheel 0.2s linear infinite;
+  animation: spin-wheel 0.25s linear infinite;
   border: 1px solid var(--primary);
   color: var(--primary);
   translate: 0 15px ;
