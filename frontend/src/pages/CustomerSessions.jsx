@@ -141,11 +141,11 @@ export default function CustomerSessions() {
 
       <div className="panel" style={{ marginBottom: "20px" }}>
         <h2 className="panel-title">Start a New Parking Session</h2>
-        {activeSessions.length > 0 && (
+        {/* {activeSessions.length > 0 && (
           <div style={{ background: "#3e2a00", border: "1px solid #f57f17", borderRadius: "8px", padding: "0.7rem 1rem", marginBottom: "1rem", color: "var(--warning)", fontSize: "0.88rem" }}>
-            <Info size={16} style={{marginRight: "4px", verticalAlign: "middle"}}/> You currently have {activeSessions.length} active session{activeSessions.length > 1 ? "s" : ""}. You may start another session only if it's for a different vehicle.
+            <Info size={16} style={{marginRight: "4px", verticalAlign: "middle"}}/> You currently have {activeSessions.length} active session{activeSessions.length > 1 ? "s" : ""}. You may start another session for a different vehicle.
           </div>
-        )}
+        )} */}
         {formError && (
           <div style={{ background: "#3e1a1a", border: "1px solid #c62828", borderRadius: "8px", padding: "0.7rem 1rem", marginBottom: "1rem", color: "var(--danger)", fontSize: "0.88rem" }}>
             {formError}

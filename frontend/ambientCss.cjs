@@ -68,7 +68,7 @@ button {
   transition: all 0.3s ease;
 }
 
-button:not(.logout-btn):not([style*="var(--danger)"]):not([style*="var(--success)"]):hover:not(:disabled) {
+button:not(.logout-btn):not(.slot-tile):not([style*="var(--danger)"]):not([style*="var(--success)"]):hover:not(:disabled) {
   background-color: var(--primary) !important;
   color: var(--primary-fg) !important;
   box-shadow: 0 0 15px var(--primary-glow) !important;
@@ -410,7 +410,7 @@ const navbarCss = `
   list-style: none;
   margin: 0;
   padding: 0;
-  gap: 0.5rem;
+  gap: 0;
   flex: 1;
   margin-left: 2rem;
 }
@@ -419,8 +419,8 @@ const navbarCss = `
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 0.2rem;
-  margin: 0 1rem;
+  padding: 0.6rem 1.2rem;
+  margin: 0;
   color: var(--text-muted);
   font-size: 0.95rem;
   font-weight: 600;
@@ -431,13 +431,13 @@ const navbarCss = `
 
 .navbar-links a:hover {
   color: var(--text-main);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 4px solid rgba(255, 255, 255, 0.1);
   transform: translateY(2px);
 }
 
 .navbar-links a.active {
   color: var(--primary);
-  border-bottom: 1px solid var(--primary);
+  border-bottom: 4px solid var(--primary);
   transform: translateY(3px);
 }
 
