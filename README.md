@@ -74,7 +74,13 @@ Roles:
 
 > Requires [Node.js](https://nodejs.org/) v18+
 
-Create a backend env file at `backend/.env`:
+Copy the example env file and fill in your values:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Edit `backend/.env`:
 
 ```
 MONGODB_URI=your_mongodb_atlas_connection_string
@@ -86,7 +92,8 @@ Then start the API server:
 ```bash
 cd backend
 npm install
-npm start
+npm start          # production
+npm run dev        # development (auto-restarts on file changes via nodemon)
 ```
 
 The API runs on **http://localhost:5000**.

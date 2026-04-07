@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import "./Dashboard.css";
 import "./Slots.css";
 
+const DEFAULT_HOURLY_RATE = 3.5;
+
 function formatDateTime(dt) {
   if (!dt) return "—";
   return new Date(dt).toLocaleString();
@@ -66,10 +68,12 @@ export default function Sessions() {
     refreshData();
   };
 
-  const handleEndSession = async (sessionId, entry_time) => {
+  const handleEndSession = async (sessionId, entry_time, zone_id) => {
     const exitTime = new Date();
     const entryDate = new Date(entry_time);
-    const durationObj = (exitTime - entryDate) / (1000 * 60 * 60);
+    const durationHrs = (exitTime - entryDate) / (1000 * 60 * 60);
+    const zone = zones.find(z => z.zone_id === zone_id);
+    const rate = zone ? zone.hourly_rate : DEFAULT_HOURLY_RATE;
     
     await fetch(`/api/sessions/${sessionId}`, {
       method: "PUT",
@@ -79,8 +83,8 @@ export default function Sessions() {
       },
       body: JSON.stringify({
         exit_time: exitTime.toISOString(),
-        duration_hours: Math.max(0.5, durationObj.toFixed(1)),
-        amount_due: Math.max(2, (durationObj * 3.5).toFixed(2)),
+        duration_hours: Math.max(0.5, parseFloat(durationHrs.toFixed(1))),
+        amount_due: parseFloat(Math.max(rate * 0.5, durationHrs * rate).toFixed(2)),
         status: "Completed"
       })
     });
@@ -199,7 +203,7 @@ export default function Sessions() {
                 <td>
                   {s.status === "Active" ? (
                     <button
-                      onClick={() => handleEndSession(s._id, s.entry_time)}
+                      onClick={() => handleEndSession(s._id, s.entry_time, s.zone_id)}
                       style={{ padding: "6px 12px", background: "rgba(248, 113, 113, 0.1)", color: "var(--danger)", border: "1px solid rgba(248, 113, 113, 0.2)", borderRadius: "var(--radius)", cursor: "pointer", fontWeight: "600", fontSize: "0.8rem", transition: "all 0.2s" }}
                       onMouseEnter={(e) => { e.currentTarget.style.background = "var(--danger)"; e.currentTarget.style.color = "#000"; e.currentTarget.style.boxShadow = "0 0 10px var(--danger-glow)"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(248, 113, 113, 0.1)"; e.currentTarget.style.color = "var(--danger)"; e.currentTarget.style.boxShadow = "none"; }}

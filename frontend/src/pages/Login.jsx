@@ -167,7 +167,7 @@ export default function Login() {
           </div>
           <div className="login-demo-row">
             <span className="login-demo-role customer-role">Customer</span>
-            <code>userOne / userOne</code>
+            <code>alice / customer123</code>
           </div>
         </div>
       </div>

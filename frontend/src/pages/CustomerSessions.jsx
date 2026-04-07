@@ -5,6 +5,8 @@ import { Car, Accessibility, Zap, Info } from "lucide-react";
 import "./Dashboard.css";
 import "./Slots.css";
 
+const DEFAULT_HOURLY_RATE = 3.5;
+
 const SLOT_TYPE_ICON = {
   "Standard": <Car size={16} />,
   "Handicapped": <Accessibility size={16} />,
@@ -104,9 +106,11 @@ export default function CustomerSessions() {
     refreshData();
   };
 
-  const handleEndSession = async (sessionId, entry_time) => {
+  const handleEndSession = async (sessionId, entry_time, zone_id) => {
     const exitTime = new Date();
-    const durationMs = (exitTime - new Date(entry_time)) / (1000 * 60 * 60);
+    const durationHrs = (exitTime - new Date(entry_time)) / (1000 * 60 * 60);
+    const zone = zones.find(z => z.zone_id === zone_id);
+    const rate = zone ? zone.hourly_rate : DEFAULT_HOURLY_RATE;
 
     const res = await fetch(`/api/sessions/${sessionId}`, {
       method: "PUT",
@@ -116,8 +120,8 @@ export default function CustomerSessions() {
       },
       body: JSON.stringify({
         exit_time: exitTime.toISOString(),
-        duration_hours: Math.max(0.5, parseFloat(durationMs.toFixed(1))),
-        amount_due: parseFloat(Math.max(2, durationMs * 3.5).toFixed(2)),
+        duration_hours: Math.max(0.5, parseFloat(durationHrs.toFixed(1))),
+        amount_due: parseFloat(Math.max(rate * 0.5, durationHrs * rate).toFixed(2)),
         status: "Completed"
       })
     });
@@ -298,7 +302,7 @@ export default function CustomerSessions() {
                   <td>
                     {s.status === "Active" ? (
                       <button
-                        onClick={() => handleEndSession(s._id, s.entry_time)}
+                        onClick={() => handleEndSession(s._id, s.entry_time, s.zone_id)}
                         style={{ padding: "4px 8px", background: "var(--danger)", color: "var(--text-main)", border: "none", borderRadius: "4px", cursor: "pointer" }}
                       >
                         End
