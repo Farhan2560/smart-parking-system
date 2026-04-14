@@ -70,6 +70,7 @@
   color: var(--primary);
   translate: 0 15px ;
   filter: blur(1px);
+  
 }
 
 .navbar-brand::after {
@@ -84,8 +85,35 @@
 }
 
 .navbar-brand:hover::after {
-  width: 185%;
+  width: 205%;
 }
+
+.hood {
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+
+.navbar-brand:hover .hood {
+  rotate: 260deg;
+  transform: translateX(-9px);
+  font-style: italic;
+}
+
+.spoiler {
+  display: inline-block;
+  transition: all 0.3s ease;
+  margin-right: 0px;
+}
+
+.navbar-brand:hover .spoiler {
+  filter: blur(1px);
+  transform: translateY(-10px);
+  rotate: -2deg;
+
+}
+
+
 
 .brand-title {
   font-size: 1.8rem;

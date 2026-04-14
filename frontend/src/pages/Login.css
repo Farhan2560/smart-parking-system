@@ -80,6 +80,7 @@
   color: var(--primary);
   translate: 0 15px ;
   filter: blur(1px);
+  /* box-shadow:inset 0px 0px 4px 5px var(--primary-glow); */
 }
 
 .login-brand::after {
@@ -95,6 +96,30 @@
 
 .login-brand:hover::after {
   width: 100%; 
+}
+
+.hood{
+  display: inline-block;
+  transition: rotate 0.5s ease;
+}
+
+.login-brand:hover .hood {
+  rotate: 260deg;
+  transform: translateX(-9px);
+  font-style: italic;
+  margin-left: -8px;
+}
+
+.spoiler {
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.login-brand:hover .spoiler {
+  filter: blur(1px);
+  transform: translateY(-10px);
+  margin-right: -11px;;
+  rotate: -2deg;
 }
 
 .login-brand-icon {

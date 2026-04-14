@@ -57,10 +57,10 @@ export default function CustomerDashboard() {
             {activeSessions.map((session, i) => (
               <div key={session._id} style={i > 0 ? { paddingTop: '1.5rem', borderTop: '1px solid var(--border)' } : {}}>
                 <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", fontSize: "0.95rem" }}>
-                  <div><span style={{ color: "#78909c" }}>Zone: </span><strong>{session.zone_name}</strong></div>
-                  <div><span style={{ color: "#78909c" }}>Slot: </span><strong>{session.slot_number}</strong></div>
-                  <div><span style={{ color: "#78909c" }}>Vehicle: </span><strong>{session.vehicle_plate}</strong></div>
-                  <div><span style={{ color: "#78909c" }}>Entry: </span><strong>{formatDateTime(session.entry_time)}</strong></div>
+                  <div><span className="text-gray-light">Zone: </span><strong>{session.zone_name}</strong></div>
+                  <div><span className="text-gray-light">Slot: </span><strong>{session.slot_number}</strong></div>
+                  <div><span className="text-gray-light">Vehicle: </span><strong>{session.vehicle_plate}</strong></div>
+                  <div><span className="text-gray-light">Entry: </span><strong>{formatDateTime(session.entry_time)}</strong></div>
                 </div>
               </div>
             ))}

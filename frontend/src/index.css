@@ -66,7 +66,7 @@ button {
   transition: all 0.3s ease;
 }
 
-button:not(.logout-btn):not(.slot-tile):not([style*="var(--danger)"]):not([style*="var(--success)"]):hover:not(:disabled) {
+button:not(.logout-btn):not(.slot-tile):not(.btn-zone-action):not(.btn-zone-cancel):not(.btn-success):not([style*="var(--danger)"]):not([style*="var(--success)"]):hover:not(:disabled) {
   background-color: var(--primary) !important;
   color: var(--primary-fg) !important;
   box-shadow: 0 0 15px var(--primary-glow) !important;
@@ -78,7 +78,8 @@ button[style*="var(--danger)"]:hover:not(:disabled) {
   box-shadow: 0 0 15px var(--danger-glow) !important;
 }
 
-button[style*="var(--success)"]:hover:not(:disabled) {
+button[style*="var(--success)"]:hover:not(:disabled),
+button.btn-success:hover:not(:disabled) {
   background-color: var(--success) !important;
   color: var(--background) !important;
   box-shadow: 0 0 15px var(--success-glow) !important;
@@ -87,4 +88,84 @@ button[style*="var(--success)"]:hover:not(:disabled) {
 @keyframes spin-wheel {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Replaces inline styles across standard JSX pages */
+.form-input {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-main);
+}
+.form-input.w-100 { width: 100%; }
+.form-input.flex-1 { flex: 1; }
+.form-input.min-w-150 { min-width: 150px; }
+
+.form-input-alt {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+.form-input-alt.flex-1 { flex: 1; }
+
+.form-row { display: flex; gap: 10px; align-items: center; }
+.form-row.flex-wrap { flex-wrap: wrap; }
+
+.btn-primary.px-4, .btn-success.px-4 {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--surface);
+}
+.btn-primary.px-4 { background: var(--primary); }
+.btn-success.px-4 { background: var(--success); }
+
+.mb-20 { margin-bottom: 20px; }
+.mb-1-flex-gap-1 { margin-bottom: 1rem; display: flex; gap: 1rem; }
+
+.text-success { color: var(--success) !important; }
+.text-danger { color: var(--danger) !important; }
+.text-warning { color: var(--warning) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.text-gray-light { color: #78909c !important; }
+
+.mr-4 { margin-right: 4px; }
+.rel-inline-block { position: relative; display: inline-block; }
+
+.text-center-p-1-5 { text-align: center; color: #546e7a; padding: 1.5rem; }
+.text-right { text-align: right; }
+
+/* Layout Utilities */
+.flex-between-center { display: flex; justify-content: space-between; align-items: center; }
+.flex-center-gap-4 { display: flex; align-items: center; gap: 4px; }
+.flex-gap-8 { display: flex; gap: 8px; }
+.flex-gap-10 { display: flex; gap: 10px; }
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: var(--surface);
+  width: 400px;
+  padding: 20px;
+}
+.modal-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
 }

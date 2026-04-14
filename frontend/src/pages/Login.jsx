@@ -71,16 +71,16 @@ export default function Login() {
       <div className="login-card">
         <div className="login-brand">
           <h1 className="login-brand-title">
-            P
+            <span className="spoiler">P</span>
             <span className="wheel">a</span>
             r
-            <span style={{ position: 'relative', display: 'inline-block' }}>
+            <span className="rel-inline-block">
               <Crown size={44} color="var(--primary)" style={{ position: 'absolute', top: '-27px', left: '50%', transform: 'translateX(-70%) rotate(340deg)' }} />
               K
             </span>
             i
             <span className="wheel">n</span>
-            g
+            <span className='hood'>g</span>
           </h1>
         </div>
 

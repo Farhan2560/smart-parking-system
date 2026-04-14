@@ -4,7 +4,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { User, Zone, Slot, Session, Payment } = require('./models');
+const { User, Vehicle, Zone, Slot, Session, Payment } = require('./models');
 
 require('dotenv').config();
 
@@ -185,6 +185,7 @@ if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
     try {
       // Clear existing
       await User.deleteMany({});
+      await Vehicle.deleteMany({});
       await Zone.deleteMany({});
       await Slot.deleteMany({});
       await Session.deleteMany({});
@@ -193,9 +194,17 @@ if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
       // Seed demo users
       const adminHash = await bcrypt.hash('admin123', 10);
       const customerHash = await bcrypt.hash('customer123', 10);
-      await User.insertMany([
+      const users = await User.insertMany([
         { username: 'admin', password: adminHash, role: 'admin', full_name: 'System Admin' },
         { username: 'alice', password: customerHash, role: 'customer', full_name: 'Alice Johnson' }
+      ]);
+      
+      const alice = users.find(u => u.username === 'alice');
+
+      // Seed vehicles
+      await Vehicle.insertMany([
+        { vehicle_plate: 'ABC-1234', user_id: alice._id, vehicle_model: 'Toyota Prius', fuel_type: 'Hybrid' },
+        { vehicle_plate: 'XYZ-5678', user_id: alice._id, vehicle_model: 'Honda Civic', fuel_type: 'Petrol' }
       ]);
 
       // The data from frontend
@@ -256,6 +265,16 @@ app.get('/api/users', requireAdmin, async (req, res) => {
   }
 });
 
+app.put('/api/users/:id', writeLimiter, requireAdmin, async (req, res) => {
+  try {
+    const { username, full_name, role } = req.body;
+    const updated = await User.findByIdAndUpdate(req.params.id, { username, full_name, role }, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // --- ZONES ---
 app.get('/api/zones', async (req, res) => {
   try {
@@ -302,10 +321,20 @@ app.post('/api/zones', writeLimiter, requireAdmin, async (req, res) => {
 
 app.put('/api/zones/:id', writeLimiter, requireAdmin, async (req, res) => {
   try {
-    const { zone_name, location, total_slots, available_slots, hourly_rate } = req.body;
+    // Exclude available_slots if you don't want it overwritten directly.
+    // E.g., if total_slots changes, we might recalculate available_slots or keep the occupied difference the same.
+    const { zone_name, location, total_slots, hourly_rate } = req.body;
+    
+    // Calculate new available_slots by preserving occupied_slots
+    const oldZone = await Zone.findOne({ zone_id: req.params.id });
+    if (!oldZone) return res.status(404).json({ error: "Zone not found" });
+
+    const occupied_slots = oldZone.total_slots - oldZone.available_slots;
+    const new_available_slots = Math.max(0, total_slots - occupied_slots);
+
     const updated = await Zone.findOneAndUpdate(
       { zone_id: req.params.id },
-      { zone_name, location, total_slots, available_slots, hourly_rate },
+      { zone_name, location, total_slots, available_slots: new_available_slots, hourly_rate },
       { new: true }
     );
     res.json(updated);
@@ -555,7 +584,7 @@ app.get('/api/payments/my', requireAuth, async (req, res) => {
     const mySessions = await Session.find({ user_id: req.user.userId }, '_id');
     const sessionIds = mySessions.map(s => s._id);
     const data = await Payment.find({ session_ref: { $in: sessionIds } })
-      .populate('session_ref', 'driver_name vehicle_plate')
+      .populate('session_ref', 'driver_name vehicle_plate entry_time')
       .sort({ _id: -1 });
     res.json(data);
   } catch (err) {
@@ -569,7 +598,7 @@ app.get('/api/payments', requireAdmin, async (req, res) => {
   try {
     // Populate session_ref so the frontend can display driver/plate from the linked Session.
     // This avoids duplicating those fields in the Payment document (3NF).
-    const data = await Payment.find().populate('session_ref', 'driver_name vehicle_plate');
+    const data = await Payment.find().populate('session_ref', 'driver_name vehicle_plate entry_time');
     res.json(data);
   } catch (err) {
     console.error('GET /api/payments error:', err);
@@ -592,6 +621,42 @@ app.post('/api/payments', writeLimiter, requireAdmin, async (req, res) => {
   }
 });
 
+app.put('/api/payments/:id', writeLimiter, requireAdmin, async (req, res) => {
+  try {
+    const { amount, method, status } = req.body;
+    const updated = await Payment.findByIdAndUpdate(req.params.id, { amount, method, status }, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+// --- VEHICLES ---
+app.get('/api/vehicles', requireAuth, async (req, res) => {
+  try {
+    const filter = req.user.role === 'admin' ? {} : { user_id: req.user.userId };
+    const data = await Vehicle.find(filter).populate('user_id', 'username full_name');
+    res.json(data);
+  } catch (err) {
+    console.error('GET /api/vehicles error:', err);
+    res.status(500).json({ error: 'An internal server error occurred' });
+  }
+});
+
+app.post('/api/vehicles', writeLimiter, requireAuth, async (req, res) => {
+  try {
+    const { vehicle_plate, vehicle_model, fuel_type } = req.body;
+    let userId = req.user.userId;
+    if (req.user.role === 'admin' && req.body.user_id) {
+      userId = req.body.user_id;
+    }
+    const newObj = new Vehicle({ vehicle_plate, user_id: userId, vehicle_model, fuel_type });
+    await newObj.save();
+    res.status(201).json(newObj);
+  } catch (err) {
+    console.error('POST /api/vehicles error:', err);
+    res.status(400).json({ error: err.message || 'Invalid vehicle data provided' });
+  }
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Backend API server running on http://localhost:${PORT}`);

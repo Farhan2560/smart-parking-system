@@ -18,10 +18,11 @@ function formatDateTime(dt) {
 
 export default function CustomerSessions() {
   const { auth } = useAuth();
-  const result = useData(['zones', 'slots', 'sessions/my']);
+  const result = useData(['zones', 'slots', 'sessions/my', 'vehicles']);
   const zones = result.zones;
   const slots = result.slots;
   const mySessions = result['sessions/my'];
+  const vehicles = result.vehicles;
   const { loading, error, refreshData } = result;
 
   const [driverName, setDriverName] = useState(auth?.full_name || "");
@@ -62,7 +63,14 @@ export default function CustomerSessions() {
   const handleStartSession = async (e) => {
     e.preventDefault();
     setFormError("");
-
+      // EV Charging Rules Validation
+      if (selectedSlot?.slot_type === "EV Charging") {
+        const matchingVehicle = vehicles?.find(v => v.vehicle_plate.toLowerCase() === vehiclePlate.toLowerCase());
+        if (matchingVehicle && matchingVehicle.fuel_type !== "Electric" && matchingVehicle.fuel_type !== "Hybrid") {
+          setFormError(`Cannot park a ${matchingVehicle.fuel_type} vehicle inside an EV Charging slot.`);
+          return;
+        }
+      }
     if (activePlates.includes(vehiclePlate.toLowerCase())) {
       setFormError(`You already have an active session for the vehicle plate "${vehiclePlate}". You can start a new session for a different vehicle.`);
       return;
@@ -104,9 +112,15 @@ export default function CustomerSessions() {
     refreshData();
   };
 
-  const handleEndSession = async (sessionId, entry_time) => {
+  const handleEndSession = async (sessionId, entry_time, zone_id) => {
     const exitTime = new Date();
     const durationMs = (exitTime - new Date(entry_time)) / (1000 * 60 * 60);
+    const durationHours = Math.max(0.5, parseFloat(durationMs.toFixed(1)));
+    
+    // Find the zone to get its hourly rate, default to 3.5 if not found
+    const zone = result.zones.find(z => z.zone_id === zone_id);
+    const hourlyRate = zone ? zone.hourly_rate : 3.5;
+    const amountDue = parseFloat(Math.max(2, durationHours * hourlyRate).toFixed(2));
 
     const res = await fetch(`/api/sessions/${sessionId}`, {
       method: "PUT",
@@ -116,8 +130,8 @@ export default function CustomerSessions() {
       },
       body: JSON.stringify({
         exit_time: exitTime.toISOString(),
-        duration_hours: Math.max(0.5, parseFloat(durationMs.toFixed(1))),
-        amount_due: parseFloat(Math.max(2, durationMs * 3.5).toFixed(2)),
+        duration_hours: durationHours,
+        amount_due: amountDue,
         status: "Completed"
       })
     });
@@ -139,7 +153,7 @@ export default function CustomerSessions() {
       <h1 className="page-title">My Parking Sessions</h1>
       <p className="page-subtitle">Pick a zone, select your slot on the map, then start your session.</p>
 
-      <div className="panel" style={{ marginBottom: "20px" }}>
+      <div className="panel mb-20">
         <h2 className="panel-title">Start a New Parking Session</h2>
         {/* {activeSessions.length > 0 && (
           <div style={{ background: "#3e2a00", border: "1px solid #f57f17", borderRadius: "8px", padding: "0.7rem 1rem", marginBottom: "1rem", color: "var(--warning)", fontSize: "0.88rem" }}>
@@ -158,20 +172,30 @@ export default function CustomerSessions() {
               value={driverName}
               onChange={e => { setDriverName(e.target.value); setFormError(""); }}
               required
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }}
+              className="form-input"
             />
             <input
-              placeholder="Vehicle Plate"
+              list="registered-vehicles-list"
+              placeholder="Vehicle Plate (Select or Type New)"
               value={vehiclePlate}
               onChange={e => { setVehiclePlate(e.target.value); setFormError(""); }}
               required
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }}
+              className="form-input"
             />
+            {vehicles && vehicles.length > 0 && (
+              <datalist id="registered-vehicles-list">
+                {vehicles.map(v => (
+                  <option key={v._id} value={v.vehicle_plate}>
+                    {v.vehicle_model}
+                  </option>
+                ))}
+              </datalist>
+            )}
             <select
               value={zoneName}
               onChange={handleZoneChange}
               required
-              style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }}
+              className="form-input"
             >
               <option value="" disabled>Select Zone</option>
               {zones.map((z) => (
@@ -189,9 +213,9 @@ export default function CustomerSessions() {
                 <span className="slot-legend-item"><span className="slot-legend-dot slot-legend-available" />Available</span>
                 <span className="slot-legend-item"><span className="slot-legend-dot slot-legend-occupied" />Occupied</span>
                 <span className="slot-legend-item"><span className="slot-legend-dot slot-legend-selected" />Selected</span>
-                <span className="slot-legend-item"><Car size={16} style={{marginRight: "4px"}}/> Standard</span>
-                <span className="slot-legend-item"><Accessibility size={16} style={{marginRight: "4px"}}/> Handicapped</span>
-                <span className="slot-legend-item"><Zap size={16} style={{marginRight: "4px"}}/> EV Charging</span>
+                <span className="slot-legend-item"><Car size={16} className="mr-4"/> Standard</span>
+                <span className="slot-legend-item"><Accessibility size={16} className="mr-4"/> Handicapped</span>
+                <span className="slot-legend-item"><Zap size={16} className="mr-4"/> EV Charging</span>
               </div>
               <div className="slot-grid" role="group" aria-label="Parking slot selection grid">
                 {zoneSlots.map(slot => {
@@ -248,7 +272,7 @@ export default function CustomerSessions() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }}
+          className="form-input"
         >
           <option value="All">All Statuses</option>
           <option value="Active">Active</option>
@@ -275,7 +299,7 @@ export default function CustomerSessions() {
           <tbody>
             {filteredSessions.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ textAlign: "center", color: "#546e7a", padding: "1.5rem" }}>
+                <td colSpan={10} className="text-center-p-1-5">
                   No sessions found.
                 </td>
               </tr>
@@ -298,7 +322,7 @@ export default function CustomerSessions() {
                   <td>
                     {s.status === "Active" ? (
                       <button
-                        onClick={() => handleEndSession(s._id, s.entry_time)}
+                        onClick={() => handleEndSession(s._id, s.entry_time, s.zone_id)}
                         style={{ padding: "4px 8px", background: "var(--danger)", color: "var(--text-main)", border: "none", borderRadius: "4px", cursor: "pointer" }}
                       >
                         End

@@ -9,6 +9,9 @@ export default function Zones() {
   const { auth } = useAuth();
   const { zones, loading, error, refreshData } = useData(['zones']);
   const [formData, setFormData] = useState({ zone_name: "", location: "", total_slots: "", hourly_rate: "" });
+  
+  // Add state for Edit Modal
+  const [editingZone, setEditingZone] = useState(null);
 
   if (loading) return <div>Loading data...</div>;
   if (error) return <div>Error loading database: {error}. Please ensure your MongoDB Atlas IP is whitelisted and your backend is connected.</div>;
@@ -57,19 +60,49 @@ export default function Zones() {
     }
   };
 
+  const handleEditChange = (e) => {
+    setEditingZone({ ...editingZone, [e.target.name]: e.target.value });
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/zones/${editingZone.zone_id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${auth.token}`
+        },
+        body: JSON.stringify({
+          zone_name: editingZone.zone_name,
+          location: editingZone.location,
+          total_slots: parseInt(editingZone.total_slots),
+          hourly_rate: parseFloat(editingZone.hourly_rate)
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update zone");
+      setEditingZone(null);
+      refreshData();
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
   return (
     <div className="page">
       <h1 className="page-title">Parking Zones</h1>
       <p className="page-subtitle">All registered parking zones and their current availability</p>
 
-      <div className="panel" style={{ marginBottom: "20px" }}>
+      <div className="panel mb-20">
         <h2 className="panel-title">Add New Parking Zone</h2>
-        <form onSubmit={handleAddZone} style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-          <input name="zone_name" placeholder="Zone Name" value={formData.zone_name} onChange={handleInputChange} required style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }} />
-          <input name="location" placeholder="Location" value={formData.location} onChange={handleInputChange} required style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }} />
-          <input name="total_slots" placeholder="Total Slots" type="number" value={formData.total_slots} onChange={handleInputChange} required style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }} />
-          <input name="hourly_rate" placeholder="Hourly Rate ($)" type="number" step="0.01" value={formData.hourly_rate} onChange={handleInputChange} required style={{ padding: "8px", borderRadius: "4px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-main)" }} />
-          <button type="submit" style={{ padding: "8px 16px", background: "var(--success)", color: "var(--surface)", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}>
+        <form onSubmit={handleAddZone} className="form-row flex-wrap">
+          <input name="zone_name" placeholder="Zone Name" value={formData.zone_name} onChange={handleInputChange} required className="form-input" />
+          <input name="location" placeholder="Location" value={formData.location} onChange={handleInputChange} required className="form-input" />
+          <input name="total_slots" placeholder="Total Slots" type="number" value={formData.total_slots} onChange={handleInputChange} required className="form-input" />
+          <input name="hourly_rate" placeholder="Hourly Rate ($)" type="number" step="0.01" value={formData.hourly_rate} onChange={handleInputChange} required className="form-input" />
+          <button type="submit" className="btn-success px-4">
             Create Zone
           </button>
         </form>
@@ -81,18 +114,20 @@ export default function Zones() {
           const color = pct > 50 ? "var(--success)" : pct > 20 ? "var(--warning)" : "var(--danger)";
           return (
             <div key={z.zone_id} className="zone-card">
-              <div className="zone-card-header" style={{ /* borderLeftColor removed for crisp design */ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="zone-card-header flex-between-center">
                 <div>
                   <h2 className="zone-name">{z.zone_name}</h2>
-                  <span className="zone-location" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={16} /> {z.location}</span>       
+                  <span className="zone-location flex-center-gap-4"><MapPin size={16} /> {z.location}</span>       
                 </div>
-                <button 
-                  onClick={() => handleDeleteZone(z.zone_id)}
-                  style={{ background: "var(--danger)", color: "var(--surface)", border: "none", borderRadius: "4px", padding: "4px 8px", cursor: "pointer", fontWeight: "bold" }}
-                  title="Delete Zone"
-                >
-                  Delete
-                </button>
+                <div className="flex-gap-8">
+                  <button 
+                    className="btn-zone-action btn-zone-edit"
+                    onClick={() => setEditingZone(z)}
+                    title="Edit Zone"
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
               <div className="zone-stats">
                 <div className="zone-stat">
@@ -100,19 +135,19 @@ export default function Zones() {
                   <span className="zone-stat-label">Total</span>
                 </div>
                 <div className="zone-stat">
-                  <span className="zone-stat-value" style={{ color: "var(--success)" }}>
+                  <span className="zone-stat-value text-success">
                     {z.available_slots}
                   </span>
                   <span className="zone-stat-label">Available</span>
                 </div>
                 <div className="zone-stat">
-                  <span className="zone-stat-value" style={{ color: "var(--danger)" }}>
+                  <span className="zone-stat-value text-danger">
                     {z.total_slots - z.available_slots}
                   </span>
                   <span className="zone-stat-label">Occupied</span>
                 </div>
                 <div className="zone-stat">
-                  <span className="zone-stat-value" style={{ color: "var(--warning)" }}>
+                  <span className="zone-stat-value text-warning">
                     ${z.hourly_rate.toFixed(2)}
                   </span>
                   <span className="zone-stat-label">/ Hour</span>
@@ -131,6 +166,51 @@ export default function Zones() {
           );
         })}
       </div>
+
+      {/* Edit Modal */}
+      {editingZone && (
+        <div className="modal-overlay">
+          <div className="panel modal-content">
+            <h2 className="panel-title">Edit Zone</h2>
+            <form onSubmit={handleEditSubmit} className="modal-form-col">
+              <label>
+                Zone Name:
+                <input name="zone_name" value={editingZone.zone_name} onChange={handleEditChange} required className="form-input w-100" />
+              </label>
+              <label>
+                Location:
+                <input name="location" value={editingZone.location} onChange={handleEditChange} required className="form-input w-100" />
+              </label>
+              <label>
+                Total Slots:
+                <input name="total_slots" type="number" value={editingZone.total_slots} onChange={handleEditChange} required className="form-input w-100" />
+              </label>
+              <label>
+                Hourly Rate ($):
+                <input name="hourly_rate" type="number" step="0.01" value={editingZone.hourly_rate} onChange={handleEditChange} required className="form-input w-100" />
+              </label>
+              
+              <div className="modal-actions">
+                <button 
+                  type="button" 
+                  className="btn-zone-action btn-zone-delete"
+                  onClick={() => {
+                    handleDeleteZone(editingZone.zone_id);
+                    setEditingZone(null); 
+                  }}
+                >
+                  Delete Zone
+                </button>
+                <div className="flex-gap-10">
+                  <button type="button" className="btn-zone-cancel" onClick={() => setEditingZone(null)} className="btn-cancel">Cancel</button>
+                  <button type="submit" className="btn-primary px-4">Save Changes</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -48,6 +48,12 @@
   letter-spacing: -0.02em;
 }
 
+.pymt-find{
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
 @media (max-width: 768px) {
   .pay-stats {
     flex-direction: column;

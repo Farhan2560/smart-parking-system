@@ -11,6 +11,7 @@ import CustomerDashboard from "./pages/CustomerDashboard";
 import CustomerSessions from "./pages/CustomerSessions";
 import CustomerPayments from "./pages/CustomerPayments";
 import Users from "./pages/Users";
+import Vehicles from "./pages/Vehicles";
 import "./App.css";
 
 // Redirects to /login if not authenticated; renders Navbar + main layout when authenticated.
@@ -72,6 +73,8 @@ export default function App() {
       <Route path="/zones" element={<ProtectedRoute adminOnly><Zones /></ProtectedRoute>} />
       <Route path="/slots" element={<ProtectedRoute adminOnly><Slots /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute adminOnly><Users /></ProtectedRoute>} />
+
+      <Route path="/vehicles" element={<ProtectedRoute><Vehicles /></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

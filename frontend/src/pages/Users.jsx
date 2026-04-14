@@ -48,7 +48,7 @@ export default function Users() {
           <tbody>
             {users.map((u) => (
               <tr key={u._id}>
-                <td style={{ color: 'var(--text-muted)' }}>{u.user_id}</td>
+                <td className="text-muted">{u.user_id}</td>
                 <td><strong>{u.username}</strong></td>
                 <td>{u.full_name || "-"}</td>
                 <td>

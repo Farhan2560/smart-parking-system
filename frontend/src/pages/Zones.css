@@ -87,3 +87,38 @@
     grid-template-columns: 1fr;
   }
 }
+
+.btn-zone-action {
+  padding: 8px 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--surface) !important;
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.btn-zone-edit {
+  background-color: var(--primary) !important;
+  color: var(--primary-fg) !important;
+}
+
+.btn-zone-edit:hover {
+  background-color: var(--accent) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 0 15px var(--primary-glow) !important;
+}
+
+.btn-zone-delete {
+  background-color: var(--danger) !important;
+  color: var(--background) !important;
+}
+
+.btn-zone-delete:hover {
+  background-color: #c62828 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 0 15px var(--danger-glow) !important;
+  color: var(--text-main) !important;
+}
+

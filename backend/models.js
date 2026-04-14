@@ -9,6 +9,14 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', UserSchema);
 
+const VehicleSchema = new mongoose.Schema({
+  vehicle_plate: { type: String, required: true, unique: true },
+  user_id: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+  vehicle_model: { type: String, default: '' },
+  fuel_type: { type: String, enum: ['Petrol', 'Diesel', 'Electric', 'Hybrid', 'Other'], default: 'Petrol' }
+});
+const Vehicle = mongoose.model('Vehicle', VehicleSchema);
+
 const ZoneSchema = new mongoose.Schema({
   zone_id: { type: Number, required: true, unique: true },
   zone_name: { type: String, required: true },
@@ -63,4 +71,4 @@ const PaymentSchema = new mongoose.Schema({
 });
 const Payment = mongoose.model('Payment', PaymentSchema);
 
-module.exports = { User, Zone, Slot, Session, Payment };
+module.exports = { User, Vehicle, Zone, Slot, Session, Payment };

@@ -11,16 +11,16 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="navbar-brand">
         <span className="brand-title">
-          P
-         <span className="wheel">a</span> 
-          r
-          <span style={{ position: 'relative', display: 'inline-block' }}>
+          <span className="spoiler">P</span>
+          <span className="wheel wheel1">a</span> 
+            r
+          <span className="rel-inline-block">
             <Crown size={30} color="var(--primary)" style={{ position: 'absolute', top: '-13px', left: '50%', transform: 'translateX(-70%) rotate(340deg)' }} />
             K
           </span>
           i
-          <span className="wheel">n</span>
-          g
+          <span className="wheel wheel2">n</span>
+          <span className='hood'>g</span>          
         </span>
       </div>
       <ul className="navbar-links">
@@ -48,6 +48,11 @@ export default function Navbar() {
             </li>
           </>
         ) : null}
+        <li>
+          <NavLink to="/vehicles" className={({ isActive }) => (isActive ? "active" : "")}>
+            {isAdmin ? "Vehicles" : "My Vehicles"}
+          </NavLink>
+        </li>
         <li>
           <NavLink to="/sessions" className={({ isActive }) => (isActive ? "active" : "")}>
             {isAdmin ? "Sessions" : "My Sessions"}
