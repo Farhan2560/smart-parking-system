@@ -171,7 +171,21 @@ export default function Zones() {
       {editingZone && (
         <div className="modal-overlay">
           <div className="panel modal-content">
-            <h2 className="panel-title">Edit Zone</h2>
+            <div className="heading-edit">
+              <h2 className="panel-title">Edit Zone</h2>
+              <button 
+                  type="button" 
+                  className="btn-zone-action btn-zone-delete"
+                  onClick={() => {
+                    handleDeleteZone(editingZone.zone_id);
+                    setEditingZone(null); 
+                  }}
+                >
+                  Delete Zone
+              </button>
+              
+            </div>
+
             <form onSubmit={handleEditSubmit} className="modal-form-col">
               <label>
                 Zone Name:
@@ -191,18 +205,9 @@ export default function Zones() {
               </label>
               
               <div className="modal-actions">
-                <button 
-                  type="button" 
-                  className="btn-zone-action btn-zone-delete"
-                  onClick={() => {
-                    handleDeleteZone(editingZone.zone_id);
-                    setEditingZone(null); 
-                  }}
-                >
-                  Delete Zone
-                </button>
+                
                 <div className="flex-gap-10">
-                  <button type="button" className="btn-zone-cancel" onClick={() => setEditingZone(null)} className="btn-cancel">Cancel</button>
+                  <button type="button" className="btn-zone-cancel btn-cancel" onClick={() => setEditingZone(null)}>Cancel</button>
                   <button type="submit" className="btn-primary px-4">Save Changes</button>
                 </div>
               </div>

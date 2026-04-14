@@ -113,6 +113,8 @@
 .btn-zone-delete {
   background-color: var(--danger) !important;
   color: var(--background) !important;
+  margin-top: -45px;
+  margin-right: -10px;
 }
 
 .btn-zone-delete:hover {
@@ -122,3 +124,29 @@
   color: var(--text-main) !important;
 }
 
+.btn-cancel {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  /* font-size: 1rem; */
+  border-radius: 8px;
+}
+
+.heading-edit{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  /* gap: 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-main); */
+}
+
+.form-input{
+  margin-top: 5px;
+  margin-bottom: 12px;
+  border-radius: 7px;
+  padding: 10px;
+}
